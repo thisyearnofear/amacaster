@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Icon } from '../components/icon'
-import { db, analytics } from '../firebaseConfig'
+import { db } from '../firebaseConfig'
 import { collection, addDoc, getDocs } from 'firebase/firestore'
 
 interface AMA {
@@ -15,12 +14,6 @@ interface AMA {
 }
 
 export default function Home() {
-  useEffect(() => {
-    fetchAMAs()
-  }, []) // Empty dependency array means this runs once on mount
-
-  return <div>...</div>
-
   const [warpcastURL, setWarpcastURL] = useState('')
   const [isHovered, setIsHovered] = useState(false)
   const [upcomingAMAs, setUpcomingAMAs] = useState<AMA[]>([])
@@ -30,28 +23,6 @@ export default function Home() {
     person: '',
     bio: '',
   })
-
-  const fetchAMAs = async () => {
-    const querySnapshot = await getDocs(collection(db, 'AMAs'))
-    const amasArray: AMA[] = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...(doc.data() as AMA), // Cast the data to the AMA type
-    }))
-    setUpcomingAMAs(amasArray)
-  }
-
-  // Function to handle form submission and add new AMA to Firestore
-  const handleAMA = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await addDoc(collection(db, 'AMAs'), newAMA)
-      console.log('AMA added successfully')
-      // Optionally, fetch AMAs again here to update the list
-    } catch (error) {
-      console.error('Error adding AMA:', error)
-    }
-    setNewAMA({ date: '', subject: '', person: '', bio: '' }) // Reset form
-  }
 
   // Fetch upcoming AMAs from Firestore
   useEffect(() => {
@@ -67,6 +38,19 @@ export default function Home() {
     fetchAMAs()
   }, [])
 
+  // Function to handle form submission and add new AMA to Firestore
+  const handleAMA = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await addDoc(collection(db, 'AMAs'), newAMA)
+      console.log('AMA added successfully')
+      // Optionally, fetch AMAs again here to update the list
+    } catch (error) {
+      console.error('Error adding AMA:', error)
+    }
+    setNewAMA({ date: '', subject: '', person: '', bio: '' }) // Reset form
+  }
+
   return (
     <div className="flex flex-col items-center py-12 w-full text-center">
       {/* Heading */}
@@ -80,16 +64,25 @@ export default function Home() {
           <h3 className="mb-2 text-center">Hosted by DWR</h3>
           <ul className="flex flex-col items-center">
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="user" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708030863/ethereum.svg"
+                alt="Vitalik Buterin"
+                className="icon-size mr-0"
+              />
               <Link
                 href="/ama?url=https://warpcast.com/dwr.eth/0x390ae86a"
                 className="underline"
               >
+                {' '}
                 Vitalik Buterin
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="brian" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/coinbase.svg"
+                alt="Brian Armstrong"
+                className="icon-size mr-1"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -97,11 +90,16 @@ export default function Home() {
                 }}
                 className="underline"
               >
+                {' '}
                 Brian Armstrong
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="fred" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/USV.svg"
+                alt="Fred Wilson"
+                className="icon-size mr-1"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -109,11 +107,16 @@ export default function Home() {
                 }}
                 className="underline"
               >
+                {' '}
                 Fred Wilson
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="garry" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/y-combinator.svg"
+                alt="Garry Tan"
+                className="icon-size mr-1"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -121,11 +124,16 @@ export default function Home() {
                 }}
                 className="underline"
               >
+                {' '}
                 Garry Tan
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="chris" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/ebay.svg"
+                alt="Chris Dixon"
+                className="icon-size mr-1"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -133,11 +141,16 @@ export default function Home() {
                 }}
                 className="underline"
               >
+                {' '}
                 Chris Dixon
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="elad" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/Twitter.svg"
+                alt="Elad Gil"
+                className="icon-size mr-1"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -145,11 +158,16 @@ export default function Home() {
                 }}
                 className="underline"
               >
+                {' '}
                 Elad Gil
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="marc" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/a16z.svg"
+                alt="Marc Andreessen"
+                className="icon-size mr-1"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -157,7 +175,8 @@ export default function Home() {
                 }}
                 className="underline"
               >
-                Marc Andressen
+                {' '}
+                Marc Andreessen
               </Link>
             </li>
           </ul>
@@ -168,7 +187,11 @@ export default function Home() {
           <h3 className="mb-2 text-center">Hosted by Community</h3>
           <ul className="flex flex-col items-center">
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="colin" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/paragraph.svg"
+                alt="@colin"
+                className="icon-size mr-2"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -180,7 +203,11 @@ export default function Home() {
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="horsefacts" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/horsefacts.svg"
+                alt="horsefacts"
+                className="icon-size mr-2"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -192,7 +219,11 @@ export default function Home() {
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="ccarrella" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/purple.svg"
+                alt="@ccarella"
+                className="icon-size mr-2"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -204,7 +235,11 @@ export default function Home() {
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="ace" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/perl.svg"
+                alt="@ace"
+                className="icon-size mr-2"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -216,7 +251,11 @@ export default function Home() {
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="df" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/mod.svg"
+                alt="@df"
+                className="icon-size mr-2"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -228,7 +267,11 @@ export default function Home() {
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="qualv" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/fxhash.svg"
+                alt="@qualv"
+                className="icon-size mr-2"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -240,7 +283,11 @@ export default function Home() {
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
-              <Icon type="linda" className="icon-size mr-2" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/bountycaster.svg"
+                alt="@linda"
+                className="icon-size mr-2"
+              />
               <Link
                 href={{
                   pathname: '/ama',
@@ -359,7 +406,11 @@ export default function Home() {
               className="flex items-center justify-start w-full max-w-4xl px-4 py-2 border-b"
             >
               {/* Icon */}
-              <Icon type="wowow" className="h-6 w-6" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/wowow.svg"
+                alt="wowow"
+                className="h-6 w-6"
+              />
 
               {/* AMA Info */}
               <span className="flex-1 text-left">
@@ -454,13 +505,25 @@ export default function Home() {
             }}
           >
             <a href="https://twitter.com/papajimjams">
-              <Icon type="twitter" className="icon-size" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/twitter.svg"
+                alt="Twitter"
+                className="icon-size"
+              />
             </a>
             <a href="https://warpcast.com/papa">
-              <Icon type="farcaster" className="icon-size" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/farcaster.svg"
+                alt="farcaster"
+                className="icon-size"
+              />
             </a>
             <a href="https://paragraph.xyz/@papajams.eth">
-              <Icon type="paragraph" className="icon-size" />
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/paragraph.svg"
+                alt="paragraph"
+                className="icon-size"
+              />
             </a>
           </div>
         </div>
