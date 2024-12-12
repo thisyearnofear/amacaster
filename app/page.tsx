@@ -107,7 +107,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center py-12 w-full text-center">
       <h2 className="text-4xl font-bold py-6">AMACASTER</h2>
-      <h3 className="text-xl font-medium py-2">Previously</h3>
+      <h3 className="text-xl font-medium py-2">archives</h3>
 
       <div className="flex justify-center w-full gap-8 mb-4">
         <div className="flex-1 max-w-md">
@@ -155,7 +155,7 @@ export default function Home() {
       </div>
 
       <div>
-        <h3 className="text-lg mb-2">Other Past AMAs</h3>
+        <h3 className="text-lg mb-2">try it</h3>
         <div className="flex flex-row justify-center">
           <input
             value={warpcastURL}
