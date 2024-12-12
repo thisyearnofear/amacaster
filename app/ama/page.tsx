@@ -1,206 +1,118 @@
-import { Metadata, ResolvingMetadata } from 'next'
-import Linkify from 'linkify-react'
-import Image from 'next/image'
+import { Metadata } from 'next'
+import neynarClient from '@/lib/neynarClient'
+import QAItem from '../components/QAItem'
+import type { Cast, Author, NeynarCast } from '../types'
 
-const options = {
-  method: 'GET',
-  headers: {
-    accept: 'application/json',
-    api_key: process.env.NEYNAR_API_KEY ?? '',
-  },
-  next: { revalidate: 600 },
-}
+export const revalidate = 3600 // Cache for 1 hour
 
-export async function generateMetadata(
-  {
-    searchParams,
-  }: {
-    searchParams: { [key: string]: string | string[] | undefined }
-  },
-  parent: ResolvingMetadata,
-): Promise<Metadata> {
-  const page = searchParams['page'] ?? 0
-  const pageNumber = +page
-  const nextPageNumber = pageNumber + 1
+const transformNeynarAuthor = (neynarAuthor: any): Author => {
+  console.log('Raw author data:', neynarAuthor)
 
-  // // fetch data
-  // const product = await fetch(`https://.../${id}`).then((res) => res.json())
-
-  // // optionally access and extend (rather than replace) parent metadata
-  // const previousImages = (await parent).openGraph?.images || []
-
-  const mainCastResponse = await fetch(
-    'https://api.neynar.com/v2/farcaster/cast?type=url&identifier=' +
-      searchParams['url'],
-    options,
-  )
-  const mainCast = await mainCastResponse.json()
-
-  // AMA user
-  const amaUser = mainCast.cast.mentioned_profiles?.[0] || mainCast.cast.author
-
-  const threadResponse = await fetch(
-    'https://api.neynar.com/v1/farcaster/all-casts-in-thread?threadHash=' +
-      mainCast.cast.hash,
-    options,
-  )
-  const thread = await threadResponse.json()
-
-  let items: {
-    hash: string
-    question: string
-    answer: string
-    userAvatar: string
-    userUsername: string
-    likes: number
-  }[] = []
-
-  thread.result.casts.map((cast: any) => {
-    if (cast.parentHash == mainCast.cast.hash) {
-      // Find answer
-      const replies = thread.result.casts.filter((obj: any) => {
-        return (
-          obj.parentHash === cast.hash &&
-          obj.author.username === amaUser?.username
-        )
-      })
-      const reply = replies?.[0]
-
-      // Only include items with answers from the AMA user
-      if (reply) {
-        items.push({
-          hash: cast.hash,
-          question: cast.text,
-          answer: reply?.text,
-          userAvatar: cast?.author?.pfp?.url,
-          userUsername: cast?.author?.username,
-          likes: cast?.reactions?.count,
-        })
-      }
-    }
-  })
-
-  const orderedThreads = items.sort((a, b) => b.likes - a.likes)
-  const { hash } = orderedThreads[pageNumber]
+  // Handle different avatar URL structures
+  const avatarUrl =
+    neynarAuthor.avatar_url ||
+    neynarAuthor.pfp_url ||
+    (neynarAuthor.pfp && neynarAuthor.pfp.url) ||
+    '/default-avatar.png'
 
   return {
-    other: {
-      'fc:frame': 'vNext',
-      'fc:frame:image': process.env.BASE_URL + '/api/cast/' + hash,
-      'fc:frame:button:1': 'Next',
-      'fc:frame:post_url':
-        process.env.BASE_URL +
-        '/ama?url=' +
-        searchParams['url'] +
-        '&page=' +
-        nextPageNumber,
-    },
-    openGraph: {
-      title: 'AMA',
-      images: process.env.BASE_URL + '/api/cast/' + mainCast.cast.hash,
-    },
+    fid: neynarAuthor.fid,
+    username: neynarAuthor.username,
+    fname: neynarAuthor.username,
+    display_name: neynarAuthor.display_name,
+    avatar_url: avatarUrl,
+    custody_address: neynarAuthor.custody_address || '',
   }
 }
 
+const transformNeynarCast = (neynarCast: NeynarCast): Cast => ({
+  hash: neynarCast.hash,
+  parent_hash: neynarCast.parent_hash,
+  author: transformNeynarAuthor(neynarCast.author),
+  text: neynarCast.text,
+  timestamp: neynarCast.timestamp,
+  reactions: neynarCast.reactions,
+})
+
 export default async function AMA({
   searchParams,
-}: Readonly<{
+}: {
   searchParams: { [key: string]: string | string[] | undefined }
-}>) {
-  const mainCastResponse = await fetch(
-    'https://api.neynar.com/v2/farcaster/cast?type=url&identifier=' +
-      searchParams['url'],
-    options,
-  )
-  const mainCast = await mainCastResponse.json()
+}) {
+  try {
+    const [mainCastResponse, threadResponse] = await Promise.all([
+      neynarClient.lookupCastByUrl(searchParams['url'] as string),
+      neynarClient.fetchThread(
+        (
+          await neynarClient.lookupCastByUrl(searchParams['url'] as string)
+        ).result.cast.thread_hash,
+      ),
+    ])
 
-  // AMA user
-  const amaUser = mainCast.cast.mentioned_profiles?.[0] || mainCast.cast.author
-  const amaUsername = amaUser?.username
-  const amaDisplayName = amaUser?.display_name
+    const mainCast = mainCastResponse.result.cast
+    const amaUser = transformNeynarAuthor(
+      mainCast.mentioned_profiles?.[0] || mainCast.author,
+    )
+    const userAvatar = amaUser.avatar_url
+    const casts = threadResponse.result.casts.map(transformNeynarCast)
 
-  const threadResponse = await fetch(
-    'https://api.neynar.com/v1/farcaster/all-casts-in-thread?threadHash=' +
-      mainCast.cast.hash,
-    options,
-  )
-  const thread = await threadResponse.json()
+    const answersByParentHash = new Map(
+      casts
+        .filter((cast) => cast.author.fid === amaUser.fid && cast.parent_hash)
+        .map((answer) => [answer.parent_hash, answer]),
+    )
 
-  let items: {
-    hash: string
-    question: string
-    answer: string
-    userAvatar: string
-    userUsername: string
-  }[] = []
+    const qaThreads = casts
+      .filter((cast) => !cast.parent_hash && cast.hash !== mainCast.hash)
+      .map((question) => ({
+        question,
+        answer: answersByParentHash.get(question.hash),
+        timestamp: new Date(question.timestamp).getTime(),
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp)
 
-  thread.result.casts.map((cast: any) => {
-    if (cast.parentHash == mainCast.cast.hash) {
-      // Find answer
-      const replies = thread.result.casts.filter((obj: any) => {
-        return (
-          obj.parentHash === cast.hash &&
-          obj.author.username === amaUser?.username
-        )
-      })
-      const reply = replies?.[0]
-
-      // Only include items with answers from the AMA user
-      if (reply) {
-        items.push({
-          hash: cast.hash,
-          question: cast.text,
-          answer: reply?.text,
-          userAvatar: cast?.author?.pfp?.url,
-          userUsername: cast?.author?.username,
-        })
-      }
-    }
-  })
-
-  return (
-    <>
-      <div className="text-xl">
-        <a href="/">AMA</a> with{' '}
-        <a href={`https://warpcast.com/${amaUsername}`} target="_blank">
-          {amaDisplayName}
-        </a>
-      </div>
-      <div className="text-sm mt-2">{mainCast.cast.text}</div>
-      <ul className="mt-18">
-        {items.map((item) => (
-          <li className="mt-12 border-l pl-2 py-2" key={item.question}>
-            <div className="flex items-top">
-              <a
-                className="inline-block h-5 w-5 shrink-0 mr-2"
-                href={`https://warpcast.com/${item.userUsername}`}
-                target="_blank"
-              >
-                <Image
-                  className="inline-block h-5 w-5 rounded-full ring-2 ring-white"
-                  src={item.userAvatar}
-                  alt=""
-                />
-              </a>{' '}
-              <div className="w-full ">
-                <a
-                  href={`https://warpcast.com/${item.userUsername}/${item.hash}`}
-                  target="_blank"
-                >
-                  <div className="text-md font-bold text-ellipsis overflow-hidden whitespace-pre-line">
-                    {item.question}
-                  </div>
-                </a>
-                <div className="text-sm mt-2 text-ellipsis overflow-hidden whitespace-pre-line">
-                  <Linkify options={{ className: 'underline' }}>
-                    {item.answer}
-                  </Linkify>
-                </div>
-              </div>
+    return (
+      <div className="ama-container">
+        {/* AMA Header */}
+        <div className="ama-header">
+          <div className="flex items-center gap-4 mb-6">
+            <img
+              src={userAvatar}
+              alt={amaUser.display_name}
+              className="w-16 h-16 rounded-full"
+            />
+            <div>
+              <h1 className="text-2xl font-bold">{amaUser.display_name}</h1>
+              <p className="text-gray-600">@{amaUser.username}</p>
             </div>
-          </li>
-        ))}
-      </ul>
-    </>
-  )
+          </div>
+          <div className="text-lg mb-6 p-4 bg-gray-50 rounded-lg">
+            {mainCast.text}
+          </div>
+        </div>
+
+        {/* Q&A Section */}
+        <div className="space-y-8">
+          {qaThreads.map(({ question, answer }) => (
+            <QAItem
+              key={question.hash}
+              question={question}
+              answer={answer}
+              amaUser={amaUser}
+              userAvatar={userAvatar}
+            />
+          ))}
+        </div>
+      </div>
+    )
+  } catch (error) {
+    console.error('Error loading AMA:', error)
+    return (
+      <div className="ama-container">
+        <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+          Error loading AMA. Please try refreshing the page.
+        </div>
+      </div>
+    )
+  }
 }

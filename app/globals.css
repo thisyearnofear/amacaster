@@ -7,6 +7,58 @@
   width: 24px;
 }
 
-a {
-  text-decoration: underline !important;
+.ama-container {
+  @apply max-w-4xl mx-auto px-4 py-8 w-full;
+}
+
+.ama-header {
+  @apply border-b border-gray-200 pb-8 mb-8 text-center;
+}
+
+.ama-question {
+  @apply mb-8;
+}
+
+.question-text {
+  @apply text-gray-900 break-words;
+}
+
+.answer-text {
+  @apply break-words;
+}
+
+.user-avatar {
+  @apply rounded-full object-cover;
+}
+
+/* Chat-like styles */
+.chat-container {
+  @apply flex flex-col gap-8 w-full;
+}
+
+.message-container {
+  @apply flex flex-col gap-6 w-full;
+}
+
+.message-bubble {
+  @apply rounded-2xl p-4 relative w-full;
+}
+
+.message-bubble-left {
+  @apply bg-gray-100 text-left;
+}
+
+.message-bubble-right {
+  @apply bg-purple-100 text-right;
+}
+
+.message-metadata {
+  @apply flex items-center gap-2 text-sm;
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .max-w-\[80\%\] {
+    max-width: 95%;
+  }
 }

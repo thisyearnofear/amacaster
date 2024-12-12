@@ -11,6 +11,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@neynar/nodejs-sdk": "^2.2.0",
     "axios": "^1.6.7",
     "firebase": "^10.8.0",
     "linkify-react": "^4.1.1",
