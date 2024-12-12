@@ -1,10 +1,19 @@
-const options = {
-  method: 'GET',
-  headers: {
-    accept: 'application/json',
-    api_key: process.env.NEYNAR_API_KEY ?? '',
-  },
-  next: { revalidate: 600 },
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+// Add cache helper
+async function fetchWithCache(url: string, options: RequestInit) {
+  const response = await fetch(url, {
+    ...options,
+    next: {
+      revalidate: 300, // Cache for 5 minutes
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+  return response.json()
 }
 
 export default async function AMA({
@@ -12,22 +21,27 @@ export default async function AMA({
 }: {
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  const mainCastResponse = await fetch(
+  const options = {
+    headers: {
+      accept: 'application/json',
+      api_key: process.env.NEYNAR_API_KEY ?? '',
+    },
+  }
+
+  // Use cache helper
+  const mainCast = await fetchWithCache(
     'https://api.neynar.com/v2/farcaster/cast?type=url&identifier=' +
       searchParams['url'],
     options,
   )
-  const mainCast = await mainCastResponse.json()
 
-  // AMA user
   const amaUser = mainCast.cast.mentioned_profiles?.[0] || mainCast.cast.author
 
-  const threadResponse = await fetch(
+  const thread = await fetchWithCache(
     'https://api.neynar.com/v1/farcaster/all-casts-in-thread?threadHash=' +
       mainCast.cast.hash,
     options,
   )
-  const thread = await threadResponse.json()
 
   let items: {
     hash: string

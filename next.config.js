@@ -2,13 +2,6 @@
 const nextConfig = {
   images: {
     unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-        pathname: '/**',
-      },
-    ],
   },
   webpack(config) {
     config.module.rules.push({

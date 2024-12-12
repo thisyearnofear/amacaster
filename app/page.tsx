@@ -3,6 +3,9 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function Home() {
   const [warpcastURL, setWarpcastURL] = useState('')
 
@@ -130,7 +133,7 @@ export default function Home() {
                 className="icon-size mr-2"
               />
               <Link
-                href="/ama?url=https://warpcast.com/jam/0x30a0f030"
+                href="/ama?url=https://warpcast.com/yb/0x8bac9cbb"
                 className="underline"
               >
                 @colin
@@ -143,7 +146,7 @@ export default function Home() {
                 className="icon-size mr-2"
               />
               <Link
-                href="/ama?url=https://warpcast.com/jam/0x794f4a4e"
+                href={`/ama?url=https://warpcast.com/yb/0x7d5219e5`}
                 className="underline"
               >
                 horsefacts
@@ -152,14 +155,14 @@ export default function Home() {
             <li className="py-1 text-center flex items-center justify-center">
               <img
                 src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031541/purple.svg"
-                alt="@ccarella"
+                alt="@dwr"
                 className="icon-size mr-2"
               />
               <Link
-                href="/ama?url=https://warpcast.com/jam/0xe195a8e2"
+                href="/ama?url=https://warpcast.com/dwr.eth/0xf41e24f1"
                 className="underline"
               >
-                @ccarella
+                @dwr
               </Link>
             </li>
             <li className="py-1 text-center flex items-center justify-center">
@@ -169,7 +172,7 @@ export default function Home() {
                 className="icon-size mr-2"
               />
               <Link
-                href="/ama?url=https://warpcast.com/kugusha.eth/0xa404739c"
+                href="/ama?url=https://warpcast.com/jam/0x794f4a4e"
                 className="underline"
               >
                 @ace
@@ -182,7 +185,7 @@ export default function Home() {
                 className="icon-size mr-2"
               />
               <Link
-                href="/ama?url=https://warpcast.com/yb/0x803cf956"
+                href={`/ama?url=https://warpcast.com/jam/0xe195a8e2`}
                 className="underline"
               >
                 @df
@@ -195,7 +198,7 @@ export default function Home() {
                 className="icon-size mr-2"
               />
               <Link
-                href="/ama?url=https://warpcast.com/dwr.eth/0x87e91802"
+                href="/ama?url=https://warpcast.com/kugusha.eth/0xa404739c"
                 className="underline"
               >
                 @qualv

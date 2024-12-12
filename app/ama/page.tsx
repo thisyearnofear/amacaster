@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import neynarClient from '@/lib/neynarClient'
 import QAItem from '../components/QAItem'
 import type { Cast, Author, NeynarCast } from '../types'
+import SafeImage from '../components/SafeImage'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -41,16 +42,15 @@ export default async function AMA({
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
   try {
-    const [mainCastResponse, threadResponse] = await Promise.all([
-      neynarClient.lookupCastByUrl(searchParams['url'] as string),
-      neynarClient.fetchThread(
-        (
-          await neynarClient.lookupCastByUrl(searchParams['url'] as string)
-        ).result.cast.thread_hash,
-      ),
-    ])
-
+    // Make single API call for main cast
+    const mainCastResponse = await neynarClient.lookupCastByUrl(
+      searchParams['url'] as string,
+    )
     const mainCast = mainCastResponse.result.cast
+
+    // Use the result for thread fetch
+    const threadResponse = await neynarClient.fetchThread(mainCast.thread_hash)
+
     const amaUser = transformNeynarAuthor(
       mainCast.mentioned_profiles?.[0] || mainCast.author,
     )
@@ -77,10 +77,12 @@ export default async function AMA({
         {/* AMA Header */}
         <div className="ama-header">
           <div className="flex items-center gap-4 mb-6">
-            <img
+            <SafeImage
               src={userAvatar}
               alt={amaUser.display_name}
-              className="w-16 h-16 rounded-full"
+              width={64}
+              height={64}
+              className="rounded-full"
             />
             <div>
               <h1 className="text-2xl font-bold">{amaUser.display_name}</h1>
