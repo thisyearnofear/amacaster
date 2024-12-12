@@ -42,20 +42,37 @@ export default async function AMA({
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
   try {
+    const url = searchParams['url']
+    if (!url || typeof url !== 'string') {
+      return (
+        <div className="ama-container">
+          <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+            Please provide a valid Warpcast URL.
+          </div>
+        </div>
+      )
+    }
+
     // Make single API call for main cast
-    const mainCastResponse = await neynarClient.lookupCastByUrl(
-      searchParams['url'] as string,
-    )
+    const mainCastResponse = await neynarClient.lookupCastByUrl(url)
+    if (!mainCastResponse?.result?.cast) {
+      throw new Error('Failed to fetch main cast')
+    }
     const mainCast = mainCastResponse.result.cast
 
     // Use the result for thread fetch
     const threadResponse = await neynarClient.fetchThread(mainCast.thread_hash)
+    if (!threadResponse?.result?.casts) {
+      throw new Error('Failed to fetch thread')
+    }
 
     const amaUser = transformNeynarAuthor(
       mainCast.mentioned_profiles?.[0] || mainCast.author,
     )
-    const userAvatar = amaUser.avatar_url
-    const casts = threadResponse.result.casts.map(transformNeynarCast)
+    const userAvatar = amaUser.avatar_url || '/default-avatar.png'
+    const casts = threadResponse.result.casts
+      .filter((cast) => cast && typeof cast === 'object')
+      .map(transformNeynarCast)
 
     const answersByParentHash = new Map(
       casts

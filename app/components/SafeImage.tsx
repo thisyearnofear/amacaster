@@ -22,7 +22,7 @@ export default function SafeImage({
 
   if (error) {
     return (
-      <img
+      <Image
         src="/default-avatar.png"
         alt={alt}
         width={width}
@@ -40,7 +40,6 @@ export default function SafeImage({
       height={height}
       className={className}
       onError={() => setError(true)}
-      unoptimized
     />
   )
 }
