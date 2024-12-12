@@ -1,6 +1,7 @@
 'use client'
 
 import { memo } from 'react'
+import Image from 'next/image'
 import { formatDate } from '../utils/formatDate'
 import type { QAItemProps } from '../types'
 
@@ -10,10 +11,12 @@ const QAItem = memo(
       <div className="space-y-6 w-full">
         {/* Question - Left side */}
         <div className="flex items-start gap-3 max-w-[80%]">
-          <img
+          <Image
             src={question.author.avatar_url || '/default-avatar.png'}
             alt={question.author.display_name}
-            className="w-10 h-10 rounded-full flex-shrink-0"
+            width={40}
+            height={40}
+            className="rounded-full flex-shrink-0"
             onError={(e) => {
               const target = e.target as HTMLImageElement
               target.src = '/default-avatar.png'
@@ -64,10 +67,12 @@ const QAItem = memo(
                 </div>
               </div>
             </div>
-            <img
+            <Image
               src={userAvatar || '/default-avatar.png'}
               alt={amaUser.display_name}
-              className="w-10 h-10 rounded-full flex-shrink-0"
+              width={40}
+              height={40}
+              className="rounded-full flex-shrink-0"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 target.src = '/default-avatar.png'

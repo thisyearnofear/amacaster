@@ -3,7 +3,8 @@ import neynarClient from '@/lib/neynarClient'
 import QAItem from '../components/QAItem'
 import type { Cast, Author, NeynarCast } from '../types'
 
-export const revalidate = 3600 // Cache for 1 hour
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 const transformNeynarAuthor = (neynarAuthor: any): Author => {
   console.log('Raw author data:', neynarAuthor)
