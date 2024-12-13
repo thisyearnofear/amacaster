@@ -54,15 +54,33 @@ export default function AMA({
   useEffect(() => {
     async function fetchData() {
       try {
-        const url = searchParams['url']
-        console.log('Received URL parameter:', url)
+        // Debug all search parameters
+        console.log('All search parameters:', searchParams)
+        console.log('Search params type:', typeof searchParams)
+
+        // Try getting URL from different methods
+        const urlFromParams = searchParams['url']
+        const urlFromSearchParams = new URLSearchParams(
+          window.location.search,
+        ).get('url')
+
+        console.log('URL from searchParams:', urlFromParams)
+        console.log('URL from window.location:', urlFromSearchParams)
+
+        // Use the URL from either source
+        const url = urlFromParams || urlFromSearchParams
 
         if (!url || typeof url !== 'string') {
-          console.error('Invalid URL parameter:', url)
+          console.error('Invalid URL parameter:', {
+            fromParams: urlFromParams,
+            fromLocation: urlFromSearchParams,
+            fullUrl: window.location.href,
+          })
           setError('Please provide a valid Warpcast URL.')
           return
         }
 
+        console.log('Using URL for fetch:', url)
         console.log('Initializing Neynar client...')
         const neynarClient = getNeynarClient()
         console.log('Neynar client initialized successfully')
