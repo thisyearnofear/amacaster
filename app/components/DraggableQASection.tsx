@@ -20,36 +20,193 @@ const DraggableQASection = ({
 }: DraggableQASectionProps) => {
   const [secondTier, setSecondTier] = useState(initialSecondTier)
   const [thirdTier, setThirdTier] = useState(initialThirdTier)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     setSecondTier(initialSecondTier)
     setThirdTier(initialThirdTier)
   }, [initialSecondTier, initialThirdTier])
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   const onDragEnd = (result: any) => {
     if (!result.destination || !isAdmin) return
 
-    const sourceList =
-      result.source.droppableId === 'questions' ? secondTier : thirdTier
-    const destList =
-      result.destination.droppableId === 'questions' ? secondTier : thirdTier
+    const { source, destination } = result
 
-    const [removed] = sourceList.splice(result.source.index, 1)
-    destList.splice(result.destination.index, 0, removed)
+    // Create new arrays to work with
+    const newSecondTier = Array.from(secondTier)
+    const newThirdTier = Array.from(thirdTier)
 
-    setSecondTier([...secondTier])
-    setThirdTier([...thirdTier])
+    // Get the source and destination arrays
+    const sourceArray =
+      source.droppableId === 'questions' ? newSecondTier : newThirdTier
+    const destArray =
+      destination.droppableId === 'questions' ? newSecondTier : newThirdTier
+
+    // Handle moving within the same column
+    if (source.droppableId === destination.droppableId) {
+      const items = Array.from(sourceArray)
+      const [reorderedItem] = items.splice(source.index, 1)
+      items.splice(destination.index, 0, reorderedItem)
+
+      if (source.droppableId === 'questions') {
+        setSecondTier(items)
+      } else {
+        setThirdTier(items)
+      }
+    } else {
+      // Handle moving between columns
+      const sourceItems = Array.from(sourceArray)
+      const destItems = Array.from(destArray)
+      const [movedItem] = sourceItems.splice(source.index, 1)
+      destItems.splice(destination.index, 0, movedItem)
+
+      if (source.droppableId === 'questions') {
+        setSecondTier(sourceItems)
+        setThirdTier(destItems)
+      } else {
+        setSecondTier(destItems)
+        setThirdTier(sourceItems)
+      }
+    }
 
     if (onOrderChange) {
-      onOrderChange(secondTier, thirdTier)
+      onOrderChange(
+        source.droppableId === 'questions' ? newSecondTier : newThirdTier,
+        source.droppableId === 'questions' ? newThirdTier : newSecondTier,
+      )
     }
   }
 
-  // Create pairs of questions and answers
-  const pairs = secondTier.map((question, index) => ({
+  const renderDraggableItem = (
+    item: Cast,
+    index: number,
+    type: 'question' | 'answer',
+  ) => (
+    <Draggable
+      key={item.hash}
+      draggableId={item.hash}
+      index={index}
+      isDragDisabled={!isAdmin}
+    >
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          className={`draggable-item ${
+            snapshot.isDragging ? 'opacity-50' : ''
+          }`}
+        >
+          <div
+            className={`message-bubble ${
+              type === 'question'
+                ? 'message-bubble-left'
+                : 'message-bubble-right'
+            }`}
+          >
+            <div
+              className={`message-header ${
+                type === 'answer' ? 'message-header-right' : ''
+              }`}
+            >
+              <Image
+                src={item.author.avatar_url || '/default-avatar.png'}
+                alt={item.author.display_name}
+                width={32}
+                height={32}
+                className="message-avatar"
+              />
+              <div
+                className={`message-metadata ${
+                  type === 'answer' ? 'justify-end' : ''
+                }`}
+              >
+                <span
+                  className={`font-medium ${
+                    type === 'answer' ? 'text-purple-900' : ''
+                  }`}
+                >
+                  {item.author.display_name}
+                </span>
+                <span
+                  className={
+                    type === 'answer' ? 'text-purple-700' : 'text-gray-500'
+                  }
+                >
+                  @{item.author.fname}
+                </span>
+                <span
+                  className={
+                    type === 'answer' ? 'text-purple-400' : 'text-gray-400'
+                  }
+                >
+                  •
+                </span>
+                <span
+                  className={
+                    type === 'answer'
+                      ? 'text-purple-700 text-sm'
+                      : 'text-gray-500 text-sm'
+                  }
+                >
+                  {new Date(item.timestamp).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+            <p
+              className={type === 'question' ? 'question-text' : 'answer-text'}
+            >
+              {item.text}
+            </p>
+            {isAdmin && <div className="drag-indicator" />}
+          </div>
+        </div>
+      )}
+    </Draggable>
+  )
+
+  // For mobile, create interleaved pairs
+  const mobilePairs = secondTier.map((question, index) => ({
     question,
-    answer: thirdTier[index] || null,
+    answer: thirdTier[index],
   }))
+
+  if (isMobile) {
+    return (
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div>
+          <Droppable droppableId="mobile-list">
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="space-y-4"
+              >
+                {mobilePairs.map((pair, index) => (
+                  <div key={index} className="space-y-4">
+                    {pair.question &&
+                      renderDraggableItem(pair.question, index * 2, 'question')}
+                    {pair.answer &&
+                      renderDraggableItem(pair.answer, index * 2 + 1, 'answer')}
+                  </div>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </div>
+      </DragDropContext>
+    )
+  }
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -60,75 +217,39 @@ const DraggableQASection = ({
           <h2 className="qa-title qa-title-answers">Answers</h2>
         </div>
 
-        {/* QA Pairs */}
-        <Droppable droppableId="pairs">
-          {(provided) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className="space-y-8"
-            >
-              {pairs.map((pair, index) => (
-                <Draggable
-                  key={pair.question.hash}
-                  draggableId={pair.question.hash}
-                  index={index}
-                  isDragDisabled={!isAdmin}
-                >
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className="grid grid-cols-2 gap-8"
-                    >
-                      {/* Question */}
-                      <div className="message-bubble message-bubble-left">
-                        <div className="message-metadata">
-                          <span className="font-medium">
-                            {pair.question.author.display_name}
-                          </span>
-                          <span className="text-gray-500">
-                            @{pair.question.author.fname}
-                          </span>
-                          <span className="text-gray-400">•</span>
-                          <span className="text-gray-500 text-sm">
-                            {new Date(
-                              pair.question.timestamp,
-                            ).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="question-text">{pair.question.text}</p>
-                      </div>
+        <div className="qa-grid">
+          {/* Questions Column */}
+          <Droppable droppableId="questions">
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="qa-column droppable-area"
+              >
+                {secondTier.map((item, index) =>
+                  renderDraggableItem(item, index, 'question'),
+                )}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
 
-                      {/* Answer */}
-                      {pair.answer && (
-                        <div className="message-bubble message-bubble-right">
-                          <div className="message-metadata justify-end">
-                            <span className="font-medium text-purple-900">
-                              {pair.answer.author.display_name}
-                            </span>
-                            <span className="text-purple-700">
-                              @{pair.answer.author.fname}
-                            </span>
-                            <span className="text-purple-400">•</span>
-                            <span className="text-purple-700 text-sm">
-                              {new Date(
-                                pair.answer.timestamp,
-                              ).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <p className="answer-text">{pair.answer.text}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
+          {/* Answers Column */}
+          <Droppable droppableId="answers">
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="qa-column droppable-area"
+              >
+                {thirdTier.map((item, index) =>
+                  renderDraggableItem(item, index, 'answer'),
+                )}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </div>
       </div>
     </DragDropContext>
   )

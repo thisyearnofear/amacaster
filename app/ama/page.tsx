@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { getNeynarClient } from '@/lib/neynarClient'
 import DraggableQASection from '../components/DraggableQASection'
 import type { Cast, Author, NeynarCast } from '../types'
-import SafeImage from '../components/SafeImage'
+import Image from 'next/image'
 
 const transformNeynarAuthor = (neynarAuthor: any): Author => {
   console.log('Raw author data:', neynarAuthor)
@@ -46,6 +46,8 @@ export default function AMA({
   const [secondTier, setSecondTier] = useState<Cast[]>([])
   const [thirdTier, setThirdTier] = useState<Cast[]>([])
   const [amaUser, setAmaUser] = useState<Author | null>(null)
+  const [hostUser, setHostUser] = useState<Author | null>(null)
+  const [guestUser, setGuestUser] = useState<Author | null>(null)
 
   const isAdmin = process.env.NEXT_PUBLIC_ADMIN_MODE === 'true'
 
@@ -68,6 +70,16 @@ export default function AMA({
         const fetchedMainCast = mainCastResponse.result.cast
         setMainCast(fetchedMainCast)
 
+        // Transform and set users
+        const fetchedAmaUser = transformNeynarAuthor(
+          fetchedMainCast.mentioned_profiles?.[0] || fetchedMainCast.author,
+        )
+        const fetchedGuestUser = transformNeynarAuthor(fetchedMainCast.author)
+
+        setAmaUser(fetchedAmaUser)
+        setHostUser(fetchedAmaUser)
+        setGuestUser(fetchedGuestUser)
+
         // Use the result for thread fetch
         const threadResponse = await neynarClient.fetchThread(
           fetchedMainCast.thread_hash,
@@ -75,11 +87,6 @@ export default function AMA({
         if (!threadResponse?.result?.casts) {
           throw new Error('Failed to fetch thread')
         }
-
-        const fetchedAmaUser = transformNeynarAuthor(
-          fetchedMainCast.mentioned_profiles?.[0] || fetchedMainCast.author,
-        )
-        setAmaUser(fetchedAmaUser)
 
         const casts = threadResponse.result.casts
           .filter((cast) => cast && typeof cast === 'object')
@@ -137,7 +144,7 @@ export default function AMA({
     )
   }
 
-  if (isLoading || !mainCast || !amaUser) {
+  if (isLoading || !mainCast || !amaUser || !hostUser || !guestUser) {
     return (
       <div className="ama-container">
         <div className="text-center">Loading...</div>
@@ -149,21 +156,43 @@ export default function AMA({
     <div className="ama-container">
       {/* AMA Header */}
       <div className="ama-header">
-        <div className="flex items-center gap-4 mb-6">
-          <SafeImage
-            src={amaUser.avatar_url}
-            alt={amaUser.display_name}
-            width={64}
-            height={64}
-            className="rounded-full"
-          />
-          <div>
-            <h1 className="text-2xl font-bold">{amaUser.display_name}</h1>
-            <p className="text-gray-600">@{amaUser.username}</p>
+        {/* Guest Profile */}
+        <div className="guest-profile">
+          <div className="profile-tag">Guest</div>
+          <div className="guest-info">
+            <Image
+              src={amaUser.avatar_url || '/default-avatar.png'}
+              alt={amaUser.display_name}
+              width={64}
+              height={64}
+              className="guest-avatar"
+            />
+            <div className="guest-name">{amaUser.display_name}</div>
+            <div className="guest-username">@{amaUser.username}</div>
           </div>
         </div>
-        <div className="text-lg mb-6 p-4 bg-gray-50 rounded-lg">
-          {mainCast.text}
+
+        {/* Initial Cast with Host Info */}
+        <div className="initial-cast">
+          <div className="cast-header">
+            <Image
+              src={
+                mainCast.author.pfp_url ||
+                mainCast.author.avatar_url ||
+                '/default-avatar.png'
+              }
+              alt={mainCast.author.display_name}
+              width={48}
+              height={48}
+              className="cast-avatar"
+            />
+            <div>
+              <div className="host-tag">Host</div>
+              <div className="font-medium">{mainCast.author.display_name}</div>
+              <div className="text-gray-600">@{mainCast.author.username}</div>
+            </div>
+          </div>
+          <div className="cast-text">{mainCast.text}</div>
         </div>
       </div>
 
