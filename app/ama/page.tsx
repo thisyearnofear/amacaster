@@ -48,8 +48,13 @@ export default function AMA({
   const [amaUser, setAmaUser] = useState<Author | null>(null)
   const [hostUser, setHostUser] = useState<Author | null>(null)
   const [guestUser, setGuestUser] = useState<Author | null>(null)
+  const [isAdmin, setIsAdmin] = useState(
+    process.env.NEXT_PUBLIC_ADMIN_MODE === 'true',
+  )
 
-  const isAdmin = process.env.NEXT_PUBLIC_ADMIN_MODE === 'true'
+  const toggleAdminMode = () => {
+    setIsAdmin((prev) => !prev)
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -190,6 +195,11 @@ export default function AMA({
 
   return (
     <div className="ama-container">
+      {/* Admin Mode Toggle Button */}
+      <button onClick={toggleAdminMode} className="admin-toggle-button">
+        {isAdmin ? 'Disable Admin Mode' : 'Enable Admin Mode'}
+      </button>
+
       {/* AMA Header */}
       <div className="ama-header">
         {/* Guest Profile */}

@@ -62,11 +62,11 @@
 
 /* QA Section Styles */
 .qa-grid {
-  @apply grid grid-cols-2 gap-8 max-w-6xl mx-auto;
+  @apply flex flex-col items-center gap-8 max-w-6xl mx-auto;
 }
 
 .qa-column {
-  @apply space-y-6;
+  @apply w-full;
 }
 
 .qa-title {
@@ -87,6 +87,10 @@
   overflow-wrap: break-word;
   word-wrap: break-word;
   hyphens: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
 }
 
 .message-bubble-left {
@@ -131,6 +135,21 @@
 .draggable-item {
   @apply cursor-move;
   touch-action: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.draggable-item.dragging {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.qa-pair.dragging {
+  border-color: #6366f1;
+  background-color: #eef2ff;
+}
+
+.qa-pair-content.dragging {
+  border-color: #6366f1;
 }
 
 .droppable-area {
@@ -145,6 +164,10 @@
   @apply opacity-100;
 }
 
+.qa-column > .draggable-item {
+  flex: 1;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .qa-grid {
@@ -157,5 +180,174 @@
 
   .message-bubble {
     max-width: 100%;
+  }
+}
+
+.numbered-band {
+  @apply flex justify-center items-center my-2;
+  width: 100%;
+}
+
+.numbered-band-text {
+  @apply text-gray-500 text-lg font-bold;
+}
+
+@media (max-width: 768px) {
+  .numbered-band {
+    @apply my-4;
+  }
+}
+
+.qa-pair {
+  @apply flex flex-col items-center mb-8;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #f9fafb;
+}
+
+.qa-pair-content {
+  @apply flex flex-col items-center;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .qa-pair {
+    @apply mb-4;
+  }
+}
+
+/* Matching Mode Styles */
+.matching-grid {
+  @apply grid gap-8 w-full;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.matching-grid.mobile {
+  @apply flex flex-col gap-4;
+}
+
+.matching-column {
+  @apply flex flex-col;
+  min-width: 0; /* Prevents overflow */
+}
+
+.matching-item-container {
+  @apply relative flex items-start min-h-[100px] w-full;
+  margin-bottom: 1rem;
+}
+
+.matching-indicator {
+  @apply absolute -right-8 text-lg font-bold flex items-center justify-center;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.pairing-number {
+  @apply bg-purple-100 text-purple-700 rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold;
+  border: 2px solid #9333ea;
+}
+
+.unmatched-indicator {
+  @apply text-gray-400;
+}
+
+/* Message bubble adjustments for matching mode */
+.matching-item-container .message-bubble {
+  @apply w-full;
+  max-width: 95%;
+  min-height: 100%;
+}
+
+.matching-item-container .message-bubble-left {
+  margin-right: 1rem;
+}
+
+.matching-item-container .message-bubble-right {
+  margin-left: 1rem;
+}
+
+/* Ensure content wraps properly */
+.question-text,
+.answer-text {
+  @apply text-gray-900 break-words whitespace-pre-wrap text-left;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .matching-grid {
+    @apply grid-cols-1;
+  }
+
+  .matching-indicator {
+    @apply -right-6 text-base;
+  }
+
+  .pairing-number {
+    @apply w-6 h-6 text-xs;
+  }
+
+  .matching-item-container .message-bubble {
+    max-width: 100%;
+  }
+
+  .matching-item-container {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Pair Actions */
+.pair-actions {
+  @apply flex gap-2 ml-4;
+}
+
+.vote-button {
+  @apply p-1 rounded hover:bg-gray-200 transition-colors;
+}
+
+/* Quick Actions Styles */
+.quick-actions-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.quick-actions-content {
+  @apply bg-white rounded-lg p-4 w-full max-w-md mx-4;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.quick-actions-header {
+  @apply flex justify-between items-center mb-4 pb-2 border-b;
+}
+
+.quick-actions-grid {
+  @apply grid gap-2;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+}
+
+.quick-action-button {
+  @apply bg-gray-100 hover:bg-gray-200 rounded-lg p-2 text-center transition-colors;
+}
+
+.quick-move-button {
+  @apply absolute top-2 right-2 p-1 rounded-full bg-white bg-opacity-80 
+    hover:bg-opacity-100 transition-all text-lg z-10;
+}
+
+/* Mobile Optimizations for Quick Actions */
+@media (max-width: 768px) {
+  .quick-actions-content {
+    @apply mx-4 p-4;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  }
+
+  .quick-action-button {
+    @apply text-sm p-2;
   }
 }

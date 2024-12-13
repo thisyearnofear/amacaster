@@ -21,6 +21,13 @@ const DraggableQASection = ({
   const [secondTier, setSecondTier] = useState(initialSecondTier)
   const [thirdTier, setThirdTier] = useState(initialThirdTier)
   const [isMobile, setIsMobile] = useState(false)
+  const [lockPairs, setLockPairs] = useState(true)
+  const [showQuickActions, setShowQuickActions] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<{
+    item: Cast
+    type: 'question' | 'answer'
+    index: number
+  } | null>(null)
 
   useEffect(() => {
     setSecondTier(initialSecondTier)
@@ -41,19 +48,31 @@ const DraggableQASection = ({
 
     const { source, destination } = result
 
-    // Create new arrays to work with
-    const newSecondTier = Array.from(secondTier)
-    const newThirdTier = Array.from(thirdTier)
+    // Handle pair swapping
+    if (source.droppableId === 'qa-pairs') {
+      const newSecondTier = Array.from(secondTier)
+      const newThirdTier = Array.from(thirdTier)
 
-    // Get the source and destination arrays
-    const sourceArray =
-      source.droppableId === 'questions' ? newSecondTier : newThirdTier
-    const destArray =
-      destination.droppableId === 'questions' ? newSecondTier : newThirdTier
+      const [removedQuestion] = newSecondTier.splice(source.index, 1)
+      const [removedAnswer] = newThirdTier.splice(source.index, 1)
 
-    // Handle moving within the same column
+      newSecondTier.splice(destination.index, 0, removedQuestion)
+      newThirdTier.splice(destination.index, 0, removedAnswer)
+
+      setSecondTier(newSecondTier)
+      setThirdTier(newThirdTier)
+
+      if (onOrderChange) {
+        onOrderChange(newSecondTier, newThirdTier)
+      }
+      return
+    }
+
+    // Handle individual item swapping
     if (source.droppableId === destination.droppableId) {
-      const items = Array.from(sourceArray)
+      // Moving within the same column
+      const items =
+        source.droppableId === 'questions' ? [...secondTier] : [...thirdTier]
       const [reorderedItem] = items.splice(source.index, 1)
       items.splice(destination.index, 0, reorderedItem)
 
@@ -62,12 +81,29 @@ const DraggableQASection = ({
       } else {
         setThirdTier(items)
       }
+
+      if (onOrderChange) {
+        onOrderChange(
+          source.droppableId === 'questions' ? items : secondTier,
+          source.droppableId === 'questions' ? thirdTier : items,
+        )
+      }
     } else {
-      // Handle moving between columns
-      const sourceItems = Array.from(sourceArray)
-      const destItems = Array.from(destArray)
+      // Moving between columns
+      const sourceItems =
+        source.droppableId === 'questions' ? [...secondTier] : [...thirdTier]
+      const destItems =
+        destination.droppableId === 'questions'
+          ? [...secondTier]
+          : [...thirdTier]
+
       const [movedItem] = sourceItems.splice(source.index, 1)
-      destItems.splice(destination.index, 0, movedItem)
+      const removedItem = destItems[destination.index]
+      destItems.splice(destination.index, 1, movedItem)
+
+      if (removedItem) {
+        sourceItems.splice(source.index, 0, removedItem)
+      }
 
       if (source.droppableId === 'questions') {
         setSecondTier(sourceItems)
@@ -76,14 +112,82 @@ const DraggableQASection = ({
         setSecondTier(destItems)
         setThirdTier(sourceItems)
       }
+
+      if (onOrderChange) {
+        onOrderChange(
+          source.droppableId === 'questions' ? sourceItems : destItems,
+          source.droppableId === 'questions' ? destItems : sourceItems,
+        )
+      }
+    }
+  }
+
+  const toggleLockPairs = () => {
+    setLockPairs((prev) => !prev)
+  }
+
+  const handleQuickAction = (targetIndex: number) => {
+    if (!selectedItem) return
+
+    const { item, type, index } = selectedItem
+    const sourceArray = type === 'question' ? secondTier : thirdTier
+    const newArray = [...sourceArray]
+
+    // Remove from current position
+    newArray.splice(index, 1)
+    // Insert at new position
+    newArray.splice(targetIndex, 0, item)
+
+    if (type === 'question') {
+      setSecondTier(newArray)
+    } else {
+      setThirdTier(newArray)
     }
 
     if (onOrderChange) {
       onOrderChange(
-        source.droppableId === 'questions' ? newSecondTier : newThirdTier,
-        source.droppableId === 'questions' ? newThirdTier : newSecondTier,
+        type === 'question' ? newArray : secondTier,
+        type === 'question' ? thirdTier : newArray,
       )
     }
+
+    setShowQuickActions(false)
+    setSelectedItem(null)
+  }
+
+  const renderQuickActions = () => {
+    if (!showQuickActions) return null
+
+    const totalPairs = Math.max(secondTier.length, thirdTier.length)
+    return (
+      <div className="quick-actions-overlay">
+        <div className="quick-actions-content">
+          <div className="quick-actions-header">
+            <h3 className="text-lg font-medium">
+              Move {selectedItem?.type === 'question' ? 'Question' : 'Answer'}{' '}
+              to Position:
+            </h3>
+            <button
+              onClick={() => setShowQuickActions(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="quick-actions-grid">
+            {Array.from({ length: totalPairs }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => handleQuickAction(index)}
+                className="quick-action-button"
+              >
+                #{index + 1}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const renderDraggableItem = (
@@ -92,8 +196,8 @@ const DraggableQASection = ({
     type: 'question' | 'answer',
   ) => (
     <Draggable
-      key={item.hash}
-      draggableId={item.hash}
+      key={`${item.hash}-${type}`}
+      draggableId={`${item.hash}-${type}`}
       index={index}
       isDragDisabled={!isAdmin}
     >
@@ -102,9 +206,7 @@ const DraggableQASection = ({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`draggable-item ${
-            snapshot.isDragging ? 'opacity-50' : ''
-          }`}
+          className={`draggable-item ${snapshot.isDragging ? 'dragging' : ''}`}
         >
           <div
             className={`message-bubble ${
@@ -113,6 +215,18 @@ const DraggableQASection = ({
                 : 'message-bubble-right'
             }`}
           >
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  setSelectedItem({ item, type, index })
+                  setShowQuickActions(true)
+                }}
+                className="quick-move-button"
+                title="Quick Move"
+              >
+                #️⃣
+              </button>
+            )}
             <div
               className={`message-header ${
                 type === 'answer' ? 'message-header-right' : ''
@@ -174,82 +288,138 @@ const DraggableQASection = ({
     </Draggable>
   )
 
-  // For mobile, create interleaved pairs
-  const mobilePairs = secondTier.map((question, index) => ({
-    question,
-    answer: thirdTier[index],
-  }))
+  return (
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div className="qa-grid">
+        {isAdmin && (
+          <button
+            onClick={toggleLockPairs}
+            className="lock-toggle-button mb-4 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+          >
+            {lockPairs ? (
+              <>
+                <span className="text-xl">🔒</span>
+                <span className="hidden md:inline">Paired Mode</span>
+                <span className="md:hidden">Pairs</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl">🔓</span>
+                <span className="hidden md:inline">Matching Mode</span>
+                <span className="md:hidden">Match</span>
+              </>
+            )}
+          </button>
+        )}
 
-  if (isMobile) {
-    return (
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div>
-          <Droppable droppableId="mobile-list">
+        {lockPairs ? (
+          // Paired Mode (Locked)
+          <Droppable droppableId="qa-pairs">
             {(provided) => (
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="space-y-4"
+                className="qa-column droppable-area"
               >
-                {mobilePairs.map((pair, index) => (
-                  <div key={index} className="space-y-4">
-                    {pair.question &&
-                      renderDraggableItem(pair.question, index * 2, 'question')}
-                    {pair.answer &&
-                      renderDraggableItem(pair.answer, index * 2 + 1, 'answer')}
+                {secondTier.map((question, index) => (
+                  <div key={`pair-${index}`} className="qa-pair">
+                    <div className="numbered-band">
+                      <span className="numbered-band-text">#{index + 1}</span>
+                      {isAdmin && (
+                        <div className="pair-actions">
+                          <button className="vote-button" title="Move Up">
+                            ⬆️
+                          </button>
+                          <button className="vote-button" title="Move Down">
+                            ⬇️
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="qa-pair-content">
+                      {renderDraggableItem(question, index * 2, 'question')}
+                      {thirdTier[index] &&
+                        renderDraggableItem(
+                          thirdTier[index],
+                          index * 2 + 1,
+                          'answer',
+                        )}
+                    </div>
                   </div>
                 ))}
                 {provided.placeholder}
               </div>
             )}
           </Droppable>
-        </div>
-      </DragDropContext>
-    )
-  }
-
-  return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div>
-        {/* Column Headers */}
-        <div className="grid grid-cols-2 mb-8">
-          <h2 className="qa-title qa-title-questions">Questions</h2>
-          <h2 className="qa-title qa-title-answers">Answers</h2>
-        </div>
-
-        <div className="qa-grid">
-          {/* Questions Column */}
-          <Droppable droppableId="questions">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="qa-column droppable-area"
-              >
-                {secondTier.map((item, index) =>
-                  renderDraggableItem(item, index, 'question'),
+        ) : (
+          // Matching Mode (Unlocked)
+          <div className={`matching-grid ${isMobile ? 'mobile' : ''}`}>
+            {/* Questions Column */}
+            <div className="matching-column">
+              <h2 className="text-lg font-medium mb-4 text-center">
+                Questions
+              </h2>
+              <Droppable droppableId="questions">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="qa-column droppable-area space-y-4"
+                  >
+                    {secondTier.map((item, index) => (
+                      <div
+                        key={`question-container-${index}`}
+                        className="matching-item-container"
+                      >
+                        {renderDraggableItem(item, index, 'question')}
+                        <div className="matching-indicator">
+                          {thirdTier[index] ? (
+                            <span className="pairing-number">#{index + 1}</span>
+                          ) : (
+                            <span className="unmatched-indicator">⟷</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {provided.placeholder}
+                  </div>
                 )}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
+              </Droppable>
+            </div>
 
-          {/* Answers Column */}
-          <Droppable droppableId="answers">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="qa-column droppable-area"
-              >
-                {thirdTier.map((item, index) =>
-                  renderDraggableItem(item, index, 'answer'),
+            {/* Answers Column */}
+            <div className="matching-column">
+              <h2 className="text-lg font-medium mb-4 text-center">Answers</h2>
+              <Droppable droppableId="answers">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="qa-column droppable-area space-y-4"
+                  >
+                    {thirdTier.map((item, index) => (
+                      <div
+                        key={`answer-container-${index}`}
+                        className="matching-item-container"
+                      >
+                        {renderDraggableItem(item, index, 'answer')}
+                        <div className="matching-indicator">
+                          {secondTier[index] ? (
+                            <span className="pairing-number">#{index + 1}</span>
+                          ) : (
+                            <span className="unmatched-indicator">⟷</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {provided.placeholder}
+                  </div>
                 )}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </div>
+              </Droppable>
+            </div>
+          </div>
+        )}
+        {renderQuickActions()}
       </div>
     </DragDropContext>
   )
