@@ -45,12 +45,14 @@ class NeynarClient {
 
   constructor(apiKey: string) {
     if (!apiKey) {
+      console.error('Constructor error: Neynar API key is required')
       throw new Error('Neynar API key is required')
     }
     this.apiKey = apiKey
   }
 
   async lookupCastByUrl(url: string): Promise<CastResponse> {
+    console.log('Attempting to fetch cast with URL:', url)
     const response = await fetch(
       `${this.apiUrl}/cast?type=url&identifier=${url}`,
       {
@@ -62,6 +64,12 @@ class NeynarClient {
     )
 
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+      })
       throw new Error(`Failed to fetch cast: ${response.statusText}`)
     }
 
@@ -100,7 +108,10 @@ class NeynarClient {
 // Create a function to get the client instance
 export function getNeynarClient() {
   const apiKey = process.env.NEXT_PUBLIC_NEYNAR_API_KEY
+  console.log('API Key exists:', !!apiKey) // Log if API key exists (not the actual key)
+
   if (!apiKey) {
+    console.error('NEXT_PUBLIC_NEYNAR_API_KEY is not set')
     throw new Error('NEXT_PUBLIC_NEYNAR_API_KEY is not set')
   }
   return new NeynarClient(apiKey)

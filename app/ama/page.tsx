@@ -55,18 +55,27 @@ export default function AMA({
     async function fetchData() {
       try {
         const url = searchParams['url']
+        console.log('Received URL parameter:', url)
+
         if (!url || typeof url !== 'string') {
+          console.error('Invalid URL parameter:', url)
           setError('Please provide a valid Warpcast URL.')
           return
         }
 
+        console.log('Initializing Neynar client...')
         const neynarClient = getNeynarClient()
+        console.log('Neynar client initialized successfully')
 
         // Make single API call for main cast
+        console.log('Fetching main cast...')
         const mainCastResponse = await neynarClient.lookupCastByUrl(url)
         if (!mainCastResponse?.result?.cast) {
+          console.error('Main cast response invalid:', mainCastResponse)
           throw new Error('Failed to fetch main cast')
         }
+        console.log('Main cast fetched successfully')
+
         const fetchedMainCast = mainCastResponse.result.cast
         setMainCast(fetchedMainCast)
 
@@ -125,9 +134,18 @@ export default function AMA({
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
           ),
         )
-      } catch (err) {
-        console.error('Error loading AMA:', err)
-        setError('Error loading AMA. Please try refreshing the page.')
+      } catch (err: unknown) {
+        console.error('Detailed error in AMA page:', {
+          message:
+            err instanceof Error ? err.message : 'Unknown error occurred',
+          stack: err instanceof Error ? err.stack : undefined,
+          error: err,
+        })
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Error loading AMA. Please try refreshing the page.',
+        )
       } finally {
         setIsLoading(false)
       }
