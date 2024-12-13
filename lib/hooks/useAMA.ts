@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import neynarClient from '@/lib/neynarClient'
+import { getNeynarClient } from '@/lib/neynarClient'
 
 export function useAMA(url: string) {
+  const neynarClient = getNeynarClient()
   return useQuery({
     queryKey: ['ama', url],
     queryFn: async () => {
