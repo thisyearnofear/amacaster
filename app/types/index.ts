@@ -43,6 +43,7 @@ export interface Cast {
 export interface QAItemProps {
   question: Cast
   answer?: Cast
+  thirdTierResponses?: Cast[]
   amaUser: Author
   userAvatar: string
 }

@@ -41,7 +41,7 @@
 }
 
 .message-bubble {
-  @apply rounded-2xl p-4 relative w-full;
+  @apply rounded-2xl p-4 relative w-full mb-4;
 }
 
 .message-bubble-left {
@@ -52,13 +52,25 @@
   @apply bg-purple-100 text-right;
 }
 
+.response-text {
+  @apply break-words;
+}
+
 .message-metadata {
   @apply flex items-center gap-2 text-sm;
 }
 
 /* Responsive styles */
-@media (max-width: 640px) {
-  .max-w-\[80\%\] {
-    max-width: 95%;
+@media (max-width: 768px) {
+  .flex.gap-4 {
+    @apply flex-col;
+  }
+
+  .flex-1 {
+    @apply w-full;
+  }
+
+  .message-bubble {
+    @apply max-w-full;
   }
 }

@@ -19,8 +19,8 @@ const transformNeynarAuthor = (neynarAuthor: any): Author => {
 
   return {
     fid: neynarAuthor.fid,
-    username: neynarAuthor.username,
-    fname: neynarAuthor.username,
+    username: neynarAuthor.username || '',
+    fname: neynarAuthor.fname || neynarAuthor.username || '',
     display_name: neynarAuthor.display_name,
     avatar_url: avatarUrl,
     custody_address: neynarAuthor.custody_address || '',
@@ -60,6 +60,12 @@ export default async function AMA({
     }
     const mainCast = mainCastResponse.result.cast
 
+    // Get mentioned usernames from the initial cast
+    const mentionedUsernames = mainCast.text
+      .split(' ')
+      .filter((word) => word.startsWith('@'))
+      .map((mention) => mention.substring(1).toLowerCase())
+
     // Use the result for thread fetch
     const threadResponse = await neynarClient.fetchThread(mainCast.thread_hash)
     if (!threadResponse?.result?.casts) {
@@ -74,20 +80,35 @@ export default async function AMA({
       .filter((cast) => cast && typeof cast === 'object')
       .map(transformNeynarCast)
 
-    const answersByParentHash = new Map(
-      casts
-        .filter((cast) => cast.author.fid === amaUser.fid && cast.parent_hash)
-        .map((answer) => [answer.parent_hash, answer]),
+    // Separate responses into second and third tier based on AMA user
+    const secondTierResponses = new Map()
+    const thirdTierResponses = new Map()
+
+    casts.forEach((cast) => {
+      if (cast.hash === mainCast.hash) return // Skip the main cast
+
+      // Check if the cast is from the AMA user by comparing both username and fname
+      const isFromAMAUser =
+        (amaUser.username && cast.author.username === amaUser.username) ||
+        (amaUser.fname && cast.author.fname === amaUser.fname)
+
+      if (isFromAMAUser) {
+        thirdTierResponses.set(cast.hash, cast)
+      } else if (!cast.parent_hash) {
+        secondTierResponses.set(cast.hash, cast)
+      }
+    })
+
+    // Convert to arrays and sort by timestamp
+    const secondTier = Array.from(secondTierResponses.values()).sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     )
 
-    const qaThreads = casts
-      .filter((cast) => !cast.parent_hash && cast.hash !== mainCast.hash)
-      .map((question) => ({
-        question,
-        answer: answersByParentHash.get(question.hash),
-        timestamp: new Date(question.timestamp).getTime(),
-      }))
-      .sort((a, b) => a.timestamp - b.timestamp)
+    const thirdTier = Array.from(thirdTierResponses.values()).sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    )
 
     return (
       <div className="ama-container">
@@ -111,17 +132,53 @@ export default async function AMA({
           </div>
         </div>
 
-        {/* Q&A Section */}
-        <div className="space-y-8">
-          {qaThreads.map(({ question, answer }) => (
-            <QAItem
-              key={question.hash}
-              question={question}
-              answer={answer}
-              amaUser={amaUser}
-              userAvatar={userAvatar}
-            />
-          ))}
+        {/* Two Column Layout for Second and Third Tier */}
+        <div className="flex gap-4">
+          {/* Second Tier (Left Column) */}
+          <div className="flex-1 space-y-4">
+            <h2 className="text-lg font-medium text-gray-700">Questions</h2>
+            {secondTier.map((cast) => (
+              <div
+                key={cast.hash}
+                className="message-bubble message-bubble-left"
+              >
+                <div className="message-metadata mb-2">
+                  <span className="font-medium">
+                    {cast.author.display_name}
+                  </span>
+                  <span className="text-gray-500">@{cast.author.fname}</span>
+                  <span className="text-gray-400">•</span>
+                  <span className="text-gray-500 text-sm">
+                    {new Date(cast.timestamp).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="question-text">{cast.text}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Third Tier (Right Column) */}
+          <div className="flex-1 space-y-4">
+            <h2 className="text-lg font-medium text-purple-700">Answers</h2>
+            {thirdTier.map((cast) => (
+              <div
+                key={cast.hash}
+                className="message-bubble message-bubble-right"
+              >
+                <div className="message-metadata mb-2 justify-end">
+                  <span className="font-medium text-purple-900">
+                    {cast.author.display_name}
+                  </span>
+                  <span className="text-purple-700">@{cast.author.fname}</span>
+                  <span className="text-purple-400">•</span>
+                  <span className="text-purple-700 text-sm">
+                    {new Date(cast.timestamp).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="answer-text text-purple-900">{cast.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     )
