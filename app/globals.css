@@ -220,43 +220,69 @@
 /* Matching Mode Styles */
 .matching-grid {
   @apply grid gap-8 w-full;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.matching-grid.mobile {
-  @apply flex flex-col gap-4;
+  grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1fr);
 }
 
 .matching-column {
   @apply flex flex-col;
-  min-width: 0; /* Prevents overflow */
+  min-width: 0;
 }
 
 .matching-item-container {
-  @apply relative flex items-start min-h-[100px] w-full;
-  margin-bottom: 1rem;
+  @apply relative flex items-center w-full;
+  min-height: 100px;
+  margin-bottom: 2rem;
 }
 
-.matching-indicator {
-  @apply absolute -right-8 text-lg font-bold flex items-center justify-center;
-  top: 50%;
-  transform: translateY(-50%);
+/* Central Numbers Column */
+.central-numbers-column {
+  @apply flex flex-col items-center;
+  margin-top: 4rem;
 }
 
-.pairing-number {
-  @apply bg-purple-100 text-purple-700 rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold;
+.central-number {
+  @apply text-lg font-bold text-purple-700 bg-purple-100 rounded-full w-8 h-8 flex items-center justify-center;
   border: 2px solid #9333ea;
+  position: relative;
+  margin-bottom: 2rem;
 }
 
-.unmatched-indicator {
-  @apply text-gray-400;
+.central-number::before,
+.central-number::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 2px;
+  background-color: #e5e7eb;
+}
+
+.central-number::before {
+  right: 100%;
+  margin-right: 8px;
+}
+
+.central-number::after {
+  left: 100%;
+  margin-left: 8px;
+}
+
+/* Quick Move Button - Matching Mode */
+.message-bubble-left .quick-move-button {
+  @apply absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+}
+
+.message-bubble-right .quick-move-button {
+  @apply absolute;
+  left: 0.75rem;
+  top: 0.75rem;
 }
 
 /* Message bubble adjustments for matching mode */
 .matching-item-container .message-bubble {
   @apply w-full;
   max-width: 95%;
-  min-height: 100%;
 }
 
 .matching-item-container .message-bubble-left {
@@ -267,35 +293,14 @@
   margin-left: 1rem;
 }
 
-/* Ensure content wraps properly */
-.question-text,
-.answer-text {
-  @apply text-gray-900 break-words whitespace-pre-wrap text-left;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
-}
-
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   .matching-grid {
-    @apply grid-cols-1;
+    display: none;
   }
 
-  .matching-indicator {
-    @apply -right-6 text-base;
-  }
-
-  .pairing-number {
-    @apply w-6 h-6 text-xs;
-  }
-
-  .matching-item-container .message-bubble {
-    max-width: 100%;
-  }
-
-  .matching-item-container {
-    margin-bottom: 0.5rem;
+  .qa-pair {
+    @apply mx-2;
   }
 }
 
@@ -333,7 +338,7 @@
 }
 
 .quick-move-button {
-  @apply absolute top-2 right-2 p-1 rounded-full bg-white bg-opacity-80 
+  @apply p-1 rounded-full bg-white bg-opacity-80 
     hover:bg-opacity-100 transition-all text-lg z-10;
 }
 

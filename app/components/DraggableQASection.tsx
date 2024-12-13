@@ -281,7 +281,6 @@ const DraggableQASection = ({
             >
               {item.text}
             </p>
-            {isAdmin && <div className="drag-indicator" />}
           </div>
         </div>
       )}
@@ -291,7 +290,7 @@ const DraggableQASection = ({
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="qa-grid">
-        {isAdmin && (
+        {isAdmin && !isMobile && (
           <button
             onClick={toggleLockPairs}
             className="lock-toggle-button mb-4 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
@@ -299,20 +298,18 @@ const DraggableQASection = ({
             {lockPairs ? (
               <>
                 <span className="text-xl">🔒</span>
-                <span className="hidden md:inline">Paired Mode</span>
-                <span className="md:hidden">Pairs</span>
+                <span>Paired Mode</span>
               </>
             ) : (
               <>
                 <span className="text-xl">🔓</span>
-                <span className="hidden md:inline">Matching Mode</span>
-                <span className="md:hidden">Match</span>
+                <span>Matching Mode</span>
               </>
             )}
           </button>
         )}
 
-        {lockPairs ? (
+        {lockPairs || isMobile ? (
           // Paired Mode (Locked)
           <Droppable droppableId="qa-pairs">
             {(provided) => (
@@ -352,8 +349,8 @@ const DraggableQASection = ({
             )}
           </Droppable>
         ) : (
-          // Matching Mode (Unlocked)
-          <div className={`matching-grid ${isMobile ? 'mobile' : ''}`}>
+          // Matching Mode (Unlocked) - Desktop Only
+          <div className="matching-grid">
             {/* Questions Column */}
             <div className="matching-column">
               <h2 className="text-lg font-medium mb-4 text-center">
@@ -372,19 +369,21 @@ const DraggableQASection = ({
                         className="matching-item-container"
                       >
                         {renderDraggableItem(item, index, 'question')}
-                        <div className="matching-indicator">
-                          {thirdTier[index] ? (
-                            <span className="pairing-number">#{index + 1}</span>
-                          ) : (
-                            <span className="unmatched-indicator">⟷</span>
-                          )}
-                        </div>
                       </div>
                     ))}
                     {provided.placeholder}
                   </div>
                 )}
               </Droppable>
+            </div>
+
+            {/* Central Numbers Column */}
+            <div className="central-numbers-column">
+              {secondTier.map((_, index) => (
+                <div key={`number-${index}`} className="central-number">
+                  #{index + 1}
+                </div>
+              ))}
             </div>
 
             {/* Answers Column */}
@@ -403,13 +402,6 @@ const DraggableQASection = ({
                         className="matching-item-container"
                       >
                         {renderDraggableItem(item, index, 'answer')}
-                        <div className="matching-indicator">
-                          {secondTier[index] ? (
-                            <span className="pairing-number">#{index + 1}</span>
-                          ) : (
-                            <span className="unmatched-indicator">⟷</span>
-                          )}
-                        </div>
                       </div>
                     ))}
                     {provided.placeholder}
