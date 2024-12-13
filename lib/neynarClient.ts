@@ -44,16 +44,13 @@ class NeynarClient {
   private apiKey: string
 
   constructor(apiKey: string) {
+    if (!apiKey) {
+      throw new Error('Neynar API key is required')
+    }
     this.apiKey = apiKey
   }
 
   async lookupCastByUrl(url: string): Promise<CastResponse> {
-    console.log(
-      'Request URL:',
-      `${this.apiUrl}/cast?type=url&identifier=${url}`,
-    )
-    console.log('API Key:', this.apiKey)
-
     const response = await fetch(
       `${this.apiUrl}/cast?type=url&identifier=${url}`,
       {
@@ -65,14 +62,10 @@ class NeynarClient {
     )
 
     if (!response.ok) {
-      console.log('Response status:', response.status)
-      console.log('Response status text:', response.statusText)
-      throw new Error('Failed to fetch cast')
+      throw new Error(`Failed to fetch cast: ${response.statusText}`)
     }
 
     const data = await response.json()
-    console.log('API Response:', data)
-
     return {
       result: {
         cast: data.cast as Cast,
@@ -81,11 +74,6 @@ class NeynarClient {
   }
 
   async fetchThread(threadHash: string): Promise<ThreadResponse> {
-    console.log(
-      'Request URL:',
-      `https://api.neynar.com/v1/farcaster/all-casts-in-thread?threadHash=${threadHash}`,
-    )
-
     const response = await fetch(
       `https://api.neynar.com/v1/farcaster/all-casts-in-thread?threadHash=${threadHash}`,
       {
@@ -97,14 +85,10 @@ class NeynarClient {
     )
 
     if (!response.ok) {
-      console.log('Response status:', response.status)
-      console.log('Response status text:', response.statusText)
-      throw new Error('Failed to fetch thread')
+      throw new Error(`Failed to fetch thread: ${response.statusText}`)
     }
 
     const data = await response.json()
-    console.log('API Response:', data)
-
     return {
       result: {
         casts: data.result.casts as Cast[],
@@ -113,8 +97,13 @@ class NeynarClient {
   }
 }
 
-// Create a new instance with the API key
-const neynarClient = new NeynarClient(process.env.NEYNAR_API_KEY!)
+// Create a function to get the client instance
+export function getNeynarClient() {
+  const apiKey = process.env.NEXT_PUBLIC_NEYNAR_API_KEY
+  if (!apiKey) {
+    throw new Error('NEXT_PUBLIC_NEYNAR_API_KEY is not set')
+  }
+  return new NeynarClient(apiKey)
+}
 
 export type { Cast }
-export default neynarClient

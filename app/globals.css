@@ -8,69 +8,83 @@
 }
 
 .ama-container {
-  @apply max-w-4xl mx-auto px-4 py-8 w-full;
+  @apply max-w-6xl mx-auto px-4 py-8 w-full;
 }
 
 .ama-header {
-  @apply border-b border-gray-200 pb-8 mb-8 text-center;
+  @apply border-b border-gray-200 pb-8 mb-8 text-center max-w-4xl mx-auto;
 }
 
-.ama-question {
-  @apply mb-8;
+.qa-title {
+  @apply text-lg font-medium text-center mb-6;
 }
 
-.question-text {
-  @apply text-gray-900 break-words;
+.qa-title-questions {
+  @apply text-gray-700;
 }
 
-.answer-text {
-  @apply break-words;
+.qa-title-answers {
+  @apply text-purple-700;
 }
 
-.user-avatar {
-  @apply rounded-full object-cover;
+/* Two column layout */
+.qa-columns {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto;
 }
 
-/* Chat-like styles */
-.chat-container {
-  @apply flex flex-col gap-8 w-full;
+.qa-column {
+  @apply space-y-4 px-4;
 }
 
-.message-container {
-  @apply flex flex-col gap-6 w-full;
+/* QA Pair styles */
+.qa-pair {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-8 items-start;
+  min-height: max-content;
 }
 
 .message-bubble {
-  @apply rounded-2xl p-4 relative w-full mb-4;
+  @apply rounded-2xl p-4 relative break-words;
+  max-width: 90%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .message-bubble-left {
-  @apply bg-gray-100 text-left;
+  @apply bg-gray-100;
+  margin-right: auto;
 }
 
 .message-bubble-right {
-  @apply bg-purple-100 text-right;
+  @apply bg-purple-100;
+  margin-left: auto;
 }
 
-.response-text {
-  @apply break-words;
+.question-text,
+.answer-text {
+  @apply text-gray-900 break-words whitespace-pre-wrap text-left;
+  max-width: 100%;
 }
 
 .message-metadata {
-  @apply flex items-center gap-2 text-sm;
+  @apply flex items-center gap-2 text-sm mb-2;
+}
+
+.message-metadata.justify-end {
+  @apply flex-row-reverse;
 }
 
 /* Responsive styles */
 @media (max-width: 768px) {
-  .flex.gap-4 {
-    @apply flex-col;
+  .qa-columns {
+    @apply grid-cols-1 gap-4;
   }
 
-  .flex-1 {
-    @apply w-full;
+  .qa-column {
+    @apply px-2;
   }
 
   .message-bubble {
-    @apply max-w-full;
+    max-width: 100%;
   }
 }
