@@ -220,8 +220,9 @@
 
 /* Matching Mode Styles */
 .matching-grid {
-  @apply grid gap-8 w-full;
+  @apply grid w-full;
   grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1fr);
+  gap: 0;
 }
 
 .matching-column {
@@ -232,7 +233,17 @@
 .matching-item-container {
   @apply relative flex items-center w-full;
   min-height: 100px;
-  margin-bottom: 2rem;
+  padding: 1rem 0;
+  transition: all 0.3s ease;
+}
+
+/* Ensure paired items have the same height */
+.matching-pair {
+  display: contents;
+}
+
+.matching-pair .matching-item-container {
+  height: var(--pair-height);
 }
 
 /* Central Numbers Column */
@@ -242,48 +253,42 @@
 }
 
 .central-number {
-  @apply text-lg font-bold text-purple-700 bg-purple-100 rounded-full w-8 h-8 flex items-center justify-center;
-  border: 2px solid #9333ea;
-  position: relative;
-  margin-bottom: 2rem;
+  @apply flex items-center justify-center relative;
+  height: var(--pair-height);
+  width: 100%;
+  transition: height 0.3s ease;
 }
 
-.central-number::before,
-.central-number::after {
-  content: '';
-  position: absolute;
-  width: 24px;
-  height: 2px;
-  background-color: #e5e7eb;
+.central-number-content {
+  @apply text-lg font-bold text-purple-700 bg-purple-100 rounded-full 
+    flex items-center justify-center z-10 border-2 border-purple-600;
+  width: 32px;
+  height: 32px;
+  position: relative;
 }
 
 .central-number::before {
-  right: 100%;
-  margin-right: 8px;
-}
-
-.central-number::after {
-  left: 100%;
-  margin-left: 8px;
-}
-
-/* Quick Move Button - Matching Mode */
-.message-bubble-left .quick-move-button {
-  @apply absolute;
-  right: 0.75rem;
-  top: 0.75rem;
-}
-
-.message-bubble-right .quick-move-button {
-  @apply absolute;
-  left: 0.75rem;
-  top: 0.75rem;
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    #e5e7eb 20%,
+    #e5e7eb 80%,
+    transparent 100%
+  );
+  opacity: 0.5;
 }
 
 /* Message bubble adjustments for matching mode */
 .matching-item-container .message-bubble {
-  @apply w-full;
+  @apply w-full transition-all duration-300;
   max-width: 95%;
+  height: 100%;
 }
 
 .matching-item-container .message-bubble-left {
@@ -292,6 +297,26 @@
 
 .matching-item-container .message-bubble-right {
   margin-left: 1rem;
+}
+
+/* Hover effects to highlight pairs */
+.matching-pair:hover .matching-item-container {
+  @apply bg-gray-50;
+}
+
+.matching-pair:hover .central-number-content {
+  transform: scale(1.1);
+}
+
+.matching-pair:hover .central-number::before {
+  opacity: 1;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    #9333ea 20%,
+    #9333ea 80%,
+    transparent 100%
+  );
 }
 
 /* Mobile Optimizations */

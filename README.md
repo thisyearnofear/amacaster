@@ -1,25 +1,51 @@
-# Farcaster AMA
+# Amacaster
 
-A farcaster AMA formatter sparked from [Dan Romero's cast](https://warpcast.com/dwr.eth/0xa04f0f2c).
+One-stop FC AMA shop
 
-## Getting Started
+## Environment Variables
 
-First, install dependencies:
+The following environment variables are required for deployment:
 
 ```bash
-yarn install
+# WalletConnect Project ID (required for production)
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_project_id_here
+
+# Neynar API Key (required for Farcaster integration)
+NEXT_PUBLIC_NEYNAR_API_KEY=your_neynar_api_key_here
+
+# Neynar Client ID (required for Sign in with Neynar)
+NEXT_PUBLIC_NEYNAR_CLIENT_ID=your_neynar_client_id_here
 ```
 
-Then, run the development server:
+### Getting the Required Keys
+
+1. **WalletConnect Project ID**:
+
+   - Visit [WalletConnect Cloud](https://cloud.walletconnect.com/)
+   - Create an account and create a new project
+   - Copy the Project ID
+
+2. **Neynar API Key & Client ID**:
+   - Visit [Neynar Developer Dashboard](https://neynar.com/)
+   - Create an account and create a new project
+   - Copy both the API Key and Client ID
+
+## Development
 
 ```bash
+# Install dependencies
+yarn install
+
+# Run the development server
 yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the app.
+## Deployment
 
-Built with Next.js.
+When deploying to Netlify, make sure to:
 
-### Environment variables
-
-You will need to create a `.env` file in your local environmen with the keys from `.env.example`. This project relies on [Neynar's API](https://neynar.com/).
+1. Add all required environment variables in your Netlify project settings
+2. Use the following build settings:
+   - Build command: `yarn build`
+   - Publish directory: `.next`
+   - Node version: 18 or higher

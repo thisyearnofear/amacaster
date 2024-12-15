@@ -7,9 +7,14 @@ import { WagmiProvider } from 'wagmi'
 import { mainnet, optimism } from 'wagmi/chains'
 import { useState } from 'react'
 
+// Ensure we have a projectId, even in development
+const projectId =
+  process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ||
+  'development-only-project-id'
+
 const config = getDefaultConfig({
   appName: 'Amacaster',
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '',
+  projectId,
   chains: [optimism, mainnet],
   ssr: true,
 })
@@ -25,6 +30,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   )
+
+  // If no valid projectId is provided in production, render without wallet connection
+  if (
+    process.env.NODE_ENV === 'production' &&
+    (!projectId || projectId === 'development-only-project-id')
+  ) {
+    return <>{children}</>
+  }
 
   return (
     <WagmiProvider config={config}>

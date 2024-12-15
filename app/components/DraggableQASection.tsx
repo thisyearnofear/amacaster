@@ -5,6 +5,10 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import type { Cast } from '../types'
 import SafeImage from './SafeImage'
 
+interface CustomCSSProperties extends React.CSSProperties {
+  '--pair-height'?: string
+}
+
 interface DraggableQASectionProps {
   secondTier: Cast[]
   thirdTier: Cast[]
@@ -244,6 +248,179 @@ export default function DraggableQASection({
     </div>
   )
 
+  // Function to render the matching mode content
+  const renderMatchingMode = () => (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="matching-grid">
+        {/* Questions Column */}
+        <Droppable droppableId="questions">
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="matching-column"
+            >
+              <h3 className="text-xl font-semibold mb-4 text-center">
+                Questions
+              </h3>
+              {localSecondTier.map((cast, index) => (
+                <div key={cast.hash} className="matching-pair">
+                  <Draggable
+                    draggableId={cast.hash}
+                    index={index}
+                    isDragDisabled={!isAdmin}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className="matching-item-container"
+                        style={
+                          {
+                            ...provided.draggableProps.style,
+                            '--pair-height': `${Math.max(
+                              getTextHeight(cast.text),
+                              getTextHeight(localThirdTier[index]?.text || ''),
+                            )}px`,
+                          } as CustomCSSProperties
+                        }
+                      >
+                        <div className="message-bubble message-bubble-left">
+                          <div className="message-header">
+                            <div className="relative w-8 h-8">
+                              <SafeImage
+                                src={cast.author.avatar_url}
+                                alt={cast.author.display_name}
+                                fill
+                                className="rounded-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <div className="font-medium text-center">
+                                {cast.author.display_name}
+                              </div>
+                              <div className="text-sm text-gray-600 text-center">
+                                @{cast.author.username}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="cast-content text-center">
+                            {cast.text}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                </div>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+
+        {/* Central Numbers Column */}
+        <div className="central-numbers-column">
+          {Array.from(
+            { length: Math.max(localSecondTier.length, localThirdTier.length) },
+            (_, i) => (
+              <div
+                key={i}
+                className="central-number"
+                style={
+                  {
+                    '--pair-height': `${Math.max(
+                      getTextHeight(localSecondTier[i]?.text || ''),
+                      getTextHeight(localThirdTier[i]?.text || ''),
+                    )}px`,
+                  } as CustomCSSProperties
+                }
+              >
+                <div className="central-number-content">{i + 1}</div>
+              </div>
+            ),
+          )}
+        </div>
+
+        {/* Answers Column */}
+        <Droppable droppableId="answers">
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="matching-column"
+            >
+              <h3 className="text-xl font-semibold mb-4 text-center">
+                Answers
+              </h3>
+              {localThirdTier.map((cast, index) => (
+                <div key={cast.hash} className="matching-pair">
+                  <Draggable
+                    draggableId={cast.hash}
+                    index={index}
+                    isDragDisabled={!isAdmin}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className="matching-item-container"
+                        style={
+                          {
+                            ...provided.draggableProps.style,
+                            '--pair-height': `${Math.max(
+                              getTextHeight(localSecondTier[index]?.text || ''),
+                              getTextHeight(cast.text),
+                            )}px`,
+                          } as CustomCSSProperties
+                        }
+                      >
+                        <div className="message-bubble message-bubble-right">
+                          <div className="message-header message-header-right">
+                            <div className="relative w-8 h-8">
+                              <SafeImage
+                                src={cast.author.avatar_url}
+                                alt={cast.author.display_name}
+                                fill
+                                className="rounded-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <div className="font-medium text-center">
+                                {cast.author.display_name}
+                              </div>
+                              <div className="text-sm text-gray-600 text-center">
+                                @{cast.author.username}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="cast-content text-center">
+                            {cast.text}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                </div>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </div>
+    </DragDropContext>
+  )
+
+  // Helper function to estimate text height
+  const getTextHeight = (text: string): number => {
+    const baseHeight = 100 // minimum height
+    const charsPerLine = 50
+    const lineHeight = 24
+    const lines = Math.ceil(text.length / charsPerLine)
+    return Math.max(baseHeight, lines * lineHeight + 80) // 80px for padding and headers
+  }
+
   return (
     <div>
       {/* Mode Toggle - Only show on desktop */}
@@ -258,144 +435,7 @@ export default function DraggableQASection({
         </div>
       )}
 
-      {isPairedMode ? (
-        renderPairedMode()
-      ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="matching-grid">
-            {/* Questions Column */}
-            <Droppable droppableId="questions">
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="matching-column"
-                >
-                  <h3 className="text-xl font-semibold mb-4 text-center">
-                    Questions
-                  </h3>
-                  {localSecondTier.map((cast, index) => (
-                    <Draggable
-                      key={cast.hash}
-                      draggableId={cast.hash}
-                      index={index}
-                      isDragDisabled={!isAdmin}
-                    >
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="matching-item-container"
-                        >
-                          <div className="message-bubble message-bubble-left">
-                            <div className="message-header">
-                              <div className="relative w-8 h-8">
-                                <SafeImage
-                                  src={cast.author.avatar_url}
-                                  alt={cast.author.display_name}
-                                  fill
-                                  className="rounded-full object-cover"
-                                />
-                              </div>
-                              <div>
-                                <div className="font-medium text-center">
-                                  {cast.author.display_name}
-                                </div>
-                                <div className="text-sm text-gray-600 text-center">
-                                  @{cast.author.username}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="cast-content text-center">
-                              {cast.text}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-
-            {/* Central Numbers Column */}
-            <div className="central-numbers-column">
-              {Array.from(
-                {
-                  length: Math.max(
-                    localSecondTier.length,
-                    localThirdTier.length,
-                  ),
-                },
-                (_, i) => (
-                  <div key={i} className="central-number">
-                    {i + 1}
-                  </div>
-                ),
-              )}
-            </div>
-
-            {/* Answers Column */}
-            <Droppable droppableId="answers">
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="matching-column"
-                >
-                  <h3 className="text-xl font-semibold mb-4 text-center">
-                    Answers
-                  </h3>
-                  {localThirdTier.map((cast, index) => (
-                    <Draggable
-                      key={cast.hash}
-                      draggableId={cast.hash}
-                      index={index}
-                      isDragDisabled={!isAdmin}
-                    >
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="matching-item-container"
-                        >
-                          <div className="message-bubble message-bubble-right">
-                            <div className="message-header message-header-right">
-                              <div className="relative w-8 h-8">
-                                <SafeImage
-                                  src={cast.author.avatar_url}
-                                  alt={cast.author.display_name}
-                                  fill
-                                  className="rounded-full object-cover"
-                                />
-                              </div>
-                              <div>
-                                <div className="font-medium text-center">
-                                  {cast.author.display_name}
-                                </div>
-                                <div className="text-sm text-gray-600 text-center">
-                                  @{cast.author.username}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="cast-content text-center">
-                              {cast.text}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </div>
-        </DragDropContext>
-      )}
+      {isPairedMode ? renderPairedMode() : renderMatchingMode()}
     </div>
   )
 }
