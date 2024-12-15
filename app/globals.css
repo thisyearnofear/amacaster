@@ -8,7 +8,8 @@
 }
 
 .ama-container {
-  @apply max-w-6xl mx-auto px-4 py-8 w-full;
+  @apply max-w-6xl mx-auto px-4 py-16 w-full;
+  padding-top: 5rem;
 }
 
 /* Header Styles */
@@ -338,8 +339,33 @@
 }
 
 .quick-move-button {
-  @apply p-1 rounded-full bg-white bg-opacity-80 
-    hover:bg-opacity-100 transition-all text-lg z-10;
+  @apply absolute p-1.5 rounded-full bg-white bg-opacity-80 
+    hover:bg-opacity-100 transition-all z-10 shadow-sm border border-gray-200;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.quick-move-button-right {
+  @apply right-2 top-2;
+}
+
+.quick-move-button-left {
+  @apply left-2 top-2;
+}
+
+.quick-move-pair-button {
+  @apply p-1.5 rounded-full bg-white hover:bg-gray-100 
+    transition-all shadow-sm border border-gray-200;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 
 /* Mobile Optimizations for Quick Actions */
@@ -355,4 +381,188 @@
   .quick-action-button {
     @apply text-sm p-2;
   }
+}
+
+/* Authentication Components */
+.auth-container {
+  @apply fixed top-4 right-4 flex items-center gap-4;
+  z-index: 1000;
+  min-width: 400px;
+}
+
+.auth-divider {
+  @apply h-6 w-px bg-gray-300;
+}
+
+/* Q&A Section Specific Styles */
+.qa-section {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-8 mt-8;
+}
+
+.questions-list,
+.answers-list {
+  @apply space-y-6;
+}
+
+.cast-item {
+  @apply bg-white rounded-lg shadow-sm p-4 border border-gray-100 transition-all;
+}
+
+.cast-item:hover {
+  @apply shadow-md;
+}
+
+.cast-header {
+  @apply flex items-center gap-3 mb-2;
+}
+
+.cast-content {
+  @apply text-gray-800 text-sm whitespace-pre-wrap;
+}
+
+/* Quick Action Buttons */
+.quick-action-button {
+  @apply p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-center;
+  min-width: 40px;
+}
+
+.quick-move-button {
+  @apply absolute right-2 top-2 p-1 rounded-full bg-white bg-opacity-80 
+    hover:bg-opacity-100 transition-all text-lg z-10 shadow-sm border border-gray-200;
+}
+
+/* Mode Toggle */
+.mode-toggle {
+  @apply px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 
+    rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 
+    focus:ring-offset-2 focus:ring-purple-500;
+}
+
+/* Ensure messages are properly centered in both modes */
+.message-bubble {
+  @apply rounded-2xl p-4 relative break-words;
+  max-width: 90%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.message-header,
+.message-content {
+  @apply text-center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .auth-container {
+    min-width: unset;
+    width: 100%;
+    padding: 0 1rem;
+  }
+
+  .matching-grid {
+    display: none;
+  }
+
+  .qa-pair {
+    @apply mx-2;
+  }
+}
+
+/* Quick Move Buttons */
+.quick-move-button {
+  @apply absolute p-1.5 rounded-full bg-white bg-opacity-80 
+    hover:bg-opacity-100 transition-all z-10 shadow-sm border border-gray-200;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.quick-move-button-right {
+  @apply right-2 top-2;
+}
+
+.quick-move-button-left {
+  @apply left-2 top-2;
+}
+
+.quick-move-pair-button {
+  @apply p-1.5 rounded-full bg-white hover:bg-gray-100 
+    transition-all shadow-sm border border-gray-200;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .matching-grid {
+    display: none;
+  }
+
+  .qa-pair {
+    @apply mx-2 w-full;
+  }
+
+  .message-bubble {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .message-bubble-left,
+  .message-bubble-right {
+    width: 100%;
+  }
+
+  .numbered-band {
+    @apply flex justify-between items-center px-4;
+  }
+
+  .quick-move-button,
+  .quick-move-pair-button {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .auth-container {
+    @apply px-4 flex-wrap;
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+/* Quick Actions Overlay */
+.quick-actions-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.quick-actions-content {
+  @apply bg-white rounded-lg p-4 w-full max-w-md mx-4;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.quick-actions-header {
+  @apply flex justify-between items-center mb-4 pb-2 border-b;
+}
+
+.quick-actions-grid {
+  @apply grid gap-2;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+}
+
+.quick-action-button {
+  @apply p-2 rounded-lg bg-gray-100 hover:bg-gray-200 
+    transition-colors text-center text-sm font-medium;
 }
