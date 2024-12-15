@@ -412,13 +412,19 @@ export default function DraggableQASection({
     </DragDropContext>
   )
 
-  // Helper function to estimate text height
+  // Helper function to estimate text height with more generous spacing
   const getTextHeight = (text: string): number => {
-    const baseHeight = 100 // minimum height
-    const charsPerLine = 50
-    const lineHeight = 24
+    const baseHeight = 120 // increased minimum height
+    const charsPerLine = 40 // reduced chars per line to account for word wrapping
+    const lineHeight = 28 // increased line height
+    const padding = 100 // increased padding for headers and extra space
     const lines = Math.ceil(text.length / charsPerLine)
-    return Math.max(baseHeight, lines * lineHeight + 80) // 80px for padding and headers
+    const calculatedHeight = lines * lineHeight + padding
+
+    // Add extra padding for longer texts
+    const extraPadding = text.length > 280 ? 40 : 0
+
+    return Math.max(baseHeight, calculatedHeight + extraPadding)
   }
 
   return (

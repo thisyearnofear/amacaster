@@ -83,15 +83,15 @@
 }
 
 .message-bubble {
-  @apply rounded-2xl p-4 relative break-words;
+  @apply rounded-2xl p-6 relative break-words;
   max-width: 90%;
   overflow-wrap: break-word;
   word-wrap: break-word;
   hyphens: auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  height: 100%;
+  justify-content: flex-start;
+  min-height: 120px;
 }
 
 .message-bubble-left {
@@ -105,7 +105,8 @@
 }
 
 .message-header {
-  @apply flex items-center gap-3 mb-3;
+  @apply flex items-center gap-3 mb-4;
+  flex-shrink: 0;
 }
 
 .message-header-right {
@@ -128,8 +129,10 @@
 
 .question-text,
 .answer-text {
-  @apply text-gray-900 break-words whitespace-pre-wrap text-left;
-  max-width: 100%;
+  @apply text-gray-800 text-base whitespace-pre-wrap break-words;
+  flex-grow: 1;
+  padding: 0.5rem 0;
+  line-height: 1.75;
 }
 
 /* Drag and Drop Styles */
@@ -232,8 +235,8 @@
 
 .matching-item-container {
   @apply relative flex items-center w-full;
-  min-height: 100px;
-  padding: 1rem 0;
+  min-height: 120px;
+  padding: 1.25rem 0;
   transition: all 0.3s ease;
 }
 
@@ -289,6 +292,10 @@
   @apply w-full transition-all duration-300;
   max-width: 95%;
   height: 100%;
+  padding: 1.5rem;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
 }
 
 .matching-item-container .message-bubble-left {
@@ -590,4 +597,10 @@
 .quick-action-button {
   @apply p-2 rounded-lg bg-gray-100 hover:bg-gray-200 
     transition-colors text-center text-sm font-medium;
+}
+
+/* Add extra padding for the quick move buttons */
+.message-bubble-left,
+.message-bubble-right {
+  padding-top: 3rem;
 }
