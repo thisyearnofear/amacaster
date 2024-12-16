@@ -1,37 +1,40 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { getNeynarClient } from "../../lib/neynarClient";
-import DraggableQASection from "../components/DraggableQASection";
-import type { Cast, Author, NeynarCast } from "../types";
-import Image from "next/image";
+import { useEffect, useState } from 'react'
+import { getNeynarClient } from '../../lib/neynarClient'
+import DraggableQASection, {
+  isAnswerStack,
+} from '../components/DraggableQASection'
+import type { Cast, Author, NeynarCast } from '../types'
+import type { AnswerEntry, AnswerStack } from '../components/DraggableQASection'
+import Image from 'next/image'
 
-const DEFAULT_AVATAR = "/default-avatar.png";
+const DEFAULT_AVATAR = '/default-avatar.png'
 
 const transformNeynarAuthor = (neynarAuthor: any): Author => {
-  console.log("Raw author data:", neynarAuthor);
+  console.log('Raw author data:', neynarAuthor)
 
   // Handle different avatar URL structures
-  let avatarUrl = DEFAULT_AVATAR;
+  let avatarUrl = DEFAULT_AVATAR
   try {
     avatarUrl =
       neynarAuthor.avatar_url ||
       neynarAuthor.pfp_url ||
       (neynarAuthor.pfp && neynarAuthor.pfp.url) ||
-      DEFAULT_AVATAR;
+      DEFAULT_AVATAR
   } catch (error) {
-    console.warn("Error processing avatar URL:", error);
+    console.warn('Error processing avatar URL:', error)
   }
 
   return {
     fid: neynarAuthor.fid,
-    username: neynarAuthor.username || "",
-    fname: neynarAuthor.fname || neynarAuthor.username || "",
+    username: neynarAuthor.username || '',
+    fname: neynarAuthor.fname || neynarAuthor.username || '',
     display_name: neynarAuthor.display_name,
     avatar_url: avatarUrl,
-    custody_address: neynarAuthor.custody_address || "",
-  };
-};
+    custody_address: neynarAuthor.custody_address || '',
+  }
+}
 
 const transformNeynarCast = (neynarCast: NeynarCast): Cast => ({
   hash: neynarCast.hash,
@@ -40,158 +43,157 @@ const transformNeynarCast = (neynarCast: NeynarCast): Cast => ({
   text: neynarCast.text,
   timestamp: neynarCast.timestamp,
   reactions: neynarCast.reactions,
-});
+})
 
 interface AMAPageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
 export default function AMAPage({ searchParams }: AMAPageProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [mainCast, setMainCast] = useState<any>(null);
-  const [secondTier, setSecondTier] = useState<Cast[]>([]);
-  const [thirdTier, setThirdTier] = useState<Cast[]>([]);
-  const [amaUser, setAmaUser] = useState<Author | null>(null);
-  const [hostUser, setHostUser] = useState<Author | null>(null);
-  const [guestUser, setGuestUser] = useState<Author | null>(null);
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [mainCast, setMainCast] = useState<any>(null)
+  const [secondTier, setSecondTier] = useState<Cast[]>([])
+  const [thirdTier, setThirdTier] = useState<Cast[]>([])
+  const [amaUser, setAmaUser] = useState<Author | null>(null)
+  const [hostUser, setHostUser] = useState<Author | null>(null)
+  const [guestUser, setGuestUser] = useState<Author | null>(null)
   const [isAdmin, setIsAdmin] = useState(
-    process.env.NEXT_PUBLIC_ADMIN_MODE === "true"
-  );
+    process.env.NEXT_PUBLIC_ADMIN_MODE === 'true',
+  )
 
   const toggleAdminMode = () => {
-    setIsAdmin((prev) => !prev);
-  };
+    setIsAdmin((prev) => !prev)
+  }
 
   useEffect(() => {
     async function fetchData() {
       try {
         // Debug all search parameters
-        console.log("All search parameters:", searchParams);
-        console.log("Search params type:", typeof searchParams);
+        console.log('All search parameters:', searchParams)
+        console.log('Search params type:', typeof searchParams)
 
         // Try getting URL from different methods
-        const urlFromParams = searchParams["url"];
+        const urlFromParams = searchParams['url']
         const urlFromSearchParams = new URLSearchParams(
-          window.location.search
-        ).get("url");
+          window.location.search,
+        ).get('url')
 
-        console.log("URL from searchParams:", urlFromParams);
-        console.log("URL from window.location:", urlFromSearchParams);
+        console.log('URL from searchParams:', urlFromParams)
+        console.log('URL from window.location:', urlFromSearchParams)
 
         // Use the URL from either source
-        const url = urlFromParams || urlFromSearchParams;
+        const url = urlFromParams || urlFromSearchParams
 
-        if (!url || typeof url !== "string") {
-          console.error("Invalid URL parameter:", {
+        if (!url || typeof url !== 'string') {
+          console.error('Invalid URL parameter:', {
             fromParams: urlFromParams,
             fromLocation: urlFromSearchParams,
             fullUrl: window.location.href,
-          });
-          setError("Please provide a valid Warpcast URL.");
-          setIsLoading(false);
-          return;
+          })
+          setError('Please provide a valid Warpcast URL.')
+          setIsLoading(false)
+          return
         }
 
-        console.log("Using URL for fetch:", url);
-        console.log("Initializing Neynar client...");
+        console.log('Using URL for fetch:', url)
+        console.log('Initializing Neynar client...')
 
         if (!process.env.NEXT_PUBLIC_NEYNAR_API_KEY) {
-          throw new Error("NEXT_PUBLIC_NEYNAR_API_KEY is not set");
+          throw new Error('NEXT_PUBLIC_NEYNAR_API_KEY is not set')
         }
 
-        const neynarClient = getNeynarClient();
-        console.log("Neynar client initialized successfully");
+        const neynarClient = getNeynarClient()
+        console.log('Neynar client initialized successfully')
 
         // Make single API call for main cast
-        console.log("Fetching main cast...");
-        const mainCastResponse = await neynarClient.lookupCastByUrl(url);
+        console.log('Fetching main cast...')
+        const mainCastResponse = await neynarClient.lookupCastByUrl(url)
         if (!mainCastResponse?.result?.cast) {
-          console.error("Main cast response invalid:", mainCastResponse);
-          throw new Error("Failed to fetch main cast");
+          console.error('Main cast response invalid:', mainCastResponse)
+          throw new Error('Failed to fetch main cast')
         }
-        console.log("Main cast fetched successfully");
+        console.log('Main cast fetched successfully')
 
-        const fetchedMainCast = mainCastResponse.result.cast;
-        setMainCast(fetchedMainCast);
+        const fetchedMainCast = mainCastResponse.result.cast
+        setMainCast(fetchedMainCast)
 
         // Transform and set users
         const fetchedAmaUser = transformNeynarAuthor(
-          fetchedMainCast.mentioned_profiles?.[0] || fetchedMainCast.author
-        );
-        const fetchedGuestUser = transformNeynarAuthor(fetchedMainCast.author);
+          fetchedMainCast.mentioned_profiles?.[0] || fetchedMainCast.author,
+        )
+        const fetchedGuestUser = transformNeynarAuthor(fetchedMainCast.author)
 
-        setAmaUser(fetchedAmaUser);
-        setHostUser(fetchedAmaUser);
-        setGuestUser(fetchedGuestUser);
+        setAmaUser(fetchedAmaUser)
+        setHostUser(fetchedAmaUser)
+        setGuestUser(fetchedGuestUser)
 
         // Use the result for thread fetch
         const threadResponse = await neynarClient.fetchThread(
-          fetchedMainCast.thread_hash
-        );
+          fetchedMainCast.thread_hash,
+        )
         if (!threadResponse?.result?.casts) {
-          throw new Error("Failed to fetch thread");
+          throw new Error('Failed to fetch thread')
         }
 
         const casts = threadResponse.result.casts
-          .filter((cast) => cast && typeof cast === "object")
-          .map(transformNeynarCast);
+          .filter((cast) => cast && typeof cast === 'object')
+          .map(transformNeynarCast)
 
         // Separate responses into second and third tier based on AMA user
-        const secondTierResponses: Cast[] = [];
-        const thirdTierResponses: Cast[] = [];
+        const secondTierResponses: Cast[] = []
+        const thirdTierResponses: Cast[] = []
 
         casts.forEach((cast) => {
-          if (cast.hash === fetchedMainCast.hash) return; // Skip the main cast
+          if (cast.hash === fetchedMainCast.hash) return // Skip the main cast
 
           // Check if the cast is from the AMA user by comparing both username and fname
           const isFromAMAUser =
             (fetchedAmaUser.username &&
               cast.author.username === fetchedAmaUser.username) ||
-            (fetchedAmaUser.fname &&
-              cast.author.fname === fetchedAmaUser.fname);
+            (fetchedAmaUser.fname && cast.author.fname === fetchedAmaUser.fname)
 
           if (isFromAMAUser) {
-            thirdTierResponses.push(cast);
+            thirdTierResponses.push(cast)
           } else if (!cast.parent_hash) {
-            secondTierResponses.push(cast);
+            secondTierResponses.push(cast)
           }
-        });
+        })
 
         // Sort by timestamp
         setSecondTier(
           secondTierResponses.sort(
             (a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          )
-        );
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+          ),
+        )
         setThirdTier(
           thirdTierResponses.sort(
             (a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          )
-        );
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+          ),
+        )
       } catch (err: unknown) {
-        console.error("Detailed error in AMA page:", err);
+        console.error('Detailed error in AMA page:', err)
         setError(
           err instanceof Error
             ? err.message
-            : "Error loading AMA. Please try refreshing the page."
-        );
+            : 'Error loading AMA. Please try refreshing the page.',
+        )
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
 
-    fetchData();
-  }, [searchParams]);
+    fetchData()
+  }, [searchParams])
 
   if (error) {
     return (
       <div className="ama-container">
         <div className="p-4 bg-red-50 text-red-700 rounded-lg">{error}</div>
       </div>
-    );
+    )
   }
 
   if (isLoading || !mainCast || !amaUser || !hostUser || !guestUser) {
@@ -199,14 +201,14 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
       <div className="ama-container">
         <div className="text-center">Loading...</div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="ama-container">
       {/* Admin Mode Toggle Button */}
       <button onClick={toggleAdminMode} className="admin-toggle-button">
-        {isAdmin ? "Disable Admin Mode" : "Enable Admin Mode"}
+        {isAdmin ? 'Disable Admin Mode' : 'Enable Admin Mode'}
       </button>
 
       {/* AMA Header */}
@@ -221,7 +223,7 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
                 alt={amaUser.display_name}
                 fill
                 className="guest-avatar rounded-full object-cover"
-                unoptimized={amaUser.avatar_url.startsWith("data:")}
+                unoptimized={amaUser.avatar_url.startsWith('data:')}
               />
             </div>
             <div className="guest-name">{amaUser.display_name}</div>
@@ -245,8 +247,8 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
                 unoptimized={(
                   mainCast.author.pfp_url ||
                   mainCast.author.avatar_url ||
-                  ""
-                ).startsWith("data:")}
+                  ''
+                ).startsWith('data:')}
               />
             </div>
             <div>
@@ -265,31 +267,35 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
         thirdTier={thirdTier}
         isAdmin={isAdmin}
         onOrderChange={async (newSecondTier, newThirdTier) => {
-          if (!isAdmin) return;
+          if (!isAdmin) return
 
           try {
-            const response = await fetch("/api/save-order", {
-              method: "POST",
+            const response = await fetch('/api/save-order', {
+              method: 'POST',
               headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
               },
               body: JSON.stringify({
                 castHash: mainCast.hash,
                 order: {
                   secondTier: newSecondTier.map((cast) => cast.hash),
-                  thirdTier: newThirdTier.map((cast) => cast.hash),
+                  thirdTier: newThirdTier.map((entry: AnswerEntry) =>
+                    isAnswerStack(entry)
+                      ? entry.answers[0].hash
+                      : (entry as Cast).hash,
+                  ),
                 },
               }),
-            });
+            })
 
             if (!response.ok) {
-              console.error("Failed to save order");
+              console.error('Failed to save order')
             }
           } catch (error) {
-            console.error("Error saving order:", error);
+            console.error('Error saving order:', error)
           }
         }}
       />
     </div>
-  );
+  )
 }

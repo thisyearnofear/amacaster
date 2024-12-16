@@ -37,12 +37,20 @@ const SliderWrapper = ({
   return <SliderComponent {...settings}>{children}</SliderComponent>
 }
 
-interface AnswerStack {
+// Add export to the interface and type definitions
+export interface AnswerStack {
   id: string
   answers: Cast[]
 }
 
-type AnswerEntry = Cast | AnswerStack
+export type AnswerEntry = Cast | AnswerStack
+
+// Add export to the helper function
+export const isAnswerStack = (
+  entry: AnswerEntry | undefined,
+): entry is AnswerStack => {
+  return entry !== undefined && 'answers' in entry
+}
 
 interface CustomCSSProperties extends React.CSSProperties {
   '--pair-height'?: string
@@ -53,12 +61,6 @@ interface DraggableQASectionProps {
   thirdTier: AnswerEntry[]
   isAdmin: boolean
   onOrderChange: (newSecondTier: Cast[], newThirdTier: AnswerEntry[]) => void
-}
-
-const isAnswerStack = (
-  entry: AnswerEntry | undefined,
-): entry is AnswerStack => {
-  return entry !== undefined && 'answers' in entry
 }
 
 export default function DraggableQASection({
@@ -296,8 +298,8 @@ export default function DraggableQASection({
     return (
       <div className="answer-stack">
         <div className="stack-container">
-          <div className="message-bubble message-bubble-right w-full mt-4">
-            <div className="message-content">
+          <div className="message-bubble message-bubble-right stacked w-full mt-4">
+            <div className="message-content stacked">
               {/* Stack Navigation at Top - Now Centered */}
               {entry.answers.length > 1 && (
                 <div className="stack-navigation">
@@ -348,7 +350,7 @@ export default function DraggableQASection({
               </div>
 
               {/* Message Text */}
-              <div className="answer-text text-center">
+              <div className="answer-text stacked text-center">
                 {currentAnswer.text}
               </div>
 
@@ -785,18 +787,31 @@ export default function DraggableQASection({
   )
 
   // Helper function to estimate text height with more generous spacing
-  const getTextHeight = (text: string | undefined): number => {
-    if (!text) return 120 // return base height for undefined text
+  const getTextHeight = (
+    text: string | undefined,
+    isStacked: boolean = false,
+  ): number => {
+    if (!text) return isStacked ? 200 : 160 // Higher base height for stacked answers
 
-    const baseHeight = 120 // increased minimum height
-    const charsPerLine = 40 // reduced chars per line to account for word wrapping
-    const lineHeight = 28 // increased line height
-    const padding = 100 // increased padding for headers and extra space
+    const baseHeight = isStacked ? 200 : 160 // Higher base for stacked answers
+    const charsPerLine = isStacked ? 30 : 35 // More conservative wrapping for stacks
+    const lineHeight = isStacked ? 36 : 32 // Increased line height for stacks
+    const padding = isStacked ? 180 : 140 // More padding for navigation controls and stack UI
     const lines = Math.ceil(text.length / charsPerLine)
     const calculatedHeight = lines * lineHeight + padding
 
-    // Add extra padding for longer texts
-    const extraPadding = text.length > 280 ? 40 : 0
+    // More generous padding for longer texts in stacks
+    const extraPadding = isStacked
+      ? text.length > 200
+        ? 120
+        : text.length > 100
+        ? 60
+        : 20
+      : text.length > 200
+      ? 80
+      : text.length > 100
+      ? 40
+      : 0
 
     return Math.max(baseHeight, calculatedHeight + extraPadding)
   }
@@ -980,6 +995,104 @@ export default function DraggableQASection({
 
           .quick-move-button-right {
             left: -2rem;
+          }
+        }
+
+        .message-bubble {
+          min-height: 160px;
+          padding: 2rem;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          margin: 1.5rem 0;
+        }
+
+        .message-content {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          position: relative;
+          padding: 0.5rem;
+        }
+
+        .admin-controls {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          padding: 1rem 0 0.5rem;
+          margin-top: auto;
+          border-top: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .stack-navigation {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          padding: 0.75rem 0;
+        }
+
+        .navigation-controls {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          background: rgba(99, 102, 241, 0.05);
+          padding: 0.5rem 1rem;
+          border-radius: 9999px;
+        }
+
+        .stack-indicator {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
+          background: #6366f1;
+          color: white;
+          border-radius: 9999px;
+          padding: 0.25rem 0.5rem;
+          font-size: 0.875rem;
+          z-index: 20;
+        }
+
+        .quick-move-button,
+        .stack-button,
+        .control-button {
+          position: relative;
+          background: white;
+          border: 1px solid #6366f1;
+          color: #6366f1;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          z-index: 20;
+        }
+
+        .control-buttons {
+          display: flex;
+          gap: 1.25rem;
+          align-items: center;
+          padding: 0 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+          .message-bubble {
+            padding: 1.75rem;
+            min-height: 140px;
+          }
+
+          .control-button,
+          .quick-move-button,
+          .stack-button {
+            width: 1.75rem;
+            height: 1.75rem;
+          }
+
+          .navigation-controls {
+            padding: 0.375rem 0.75rem;
           }
         }
 
@@ -1777,6 +1890,91 @@ export default function DraggableQASection({
 
           .navigation-controls {
             padding: 0.25rem 0.5rem;
+          }
+        }
+
+        .matching-item-container {
+          margin: 1rem 0;
+          position: relative;
+        }
+
+        .matching-pair {
+          position: relative;
+          margin: 1.5rem 0;
+        }
+
+        .answer-stack {
+          position: relative;
+          margin: 2rem 0;
+        }
+
+        .message-bubble {
+          min-height: 160px;
+          padding: 2rem;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          margin: 1.5rem 0;
+        }
+
+        .message-bubble.stacked {
+          min-height: 200px;
+          padding: 2.5rem;
+          gap: 1.5rem;
+        }
+
+        .message-content {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          position: relative;
+          padding: 0.5rem;
+        }
+
+        .message-content.stacked {
+          gap: 1.5rem;
+          padding: 0.75rem;
+        }
+
+        .stack-navigation {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          padding: 1rem 0;
+          margin-bottom: 0.5rem;
+        }
+
+        .navigation-controls {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          background: rgba(99, 102, 241, 0.05);
+          padding: 0.5rem 1.25rem;
+          border-radius: 9999px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .answer-text {
+          position: relative;
+          z-index: 10;
+          padding: 0.5rem;
+        }
+
+        .answer-text.stacked {
+          padding: 0.75rem;
+          margin: 0.5rem 0;
+        }
+
+        @media (max-width: 768px) {
+          .message-bubble.stacked {
+            min-height: 180px;
+            padding: 2rem;
+          }
+
+          .message-content.stacked {
+            gap: 1.25rem;
+            padding: 0.5rem;
           }
         }
       `}</style>
