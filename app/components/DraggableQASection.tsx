@@ -63,6 +63,7 @@ interface DraggableQASectionProps {
   thirdTier: AnswerEntry[]
   isAdmin: boolean
   onOrderChange: (newSecondTier: Cast[], newThirdTier: AnswerEntry[]) => void
+  isFarcasterConnected?: boolean
 }
 
 export default function DraggableQASection({
@@ -70,6 +71,7 @@ export default function DraggableQASection({
   thirdTier,
   isAdmin,
   onOrderChange,
+  isFarcasterConnected = false,
 }: DraggableQASectionProps) {
   const [localSecondTier, setLocalSecondTier] = useState<Cast[]>(secondTier)
   const [localThirdTier, setLocalThirdTier] = useState<AnswerEntry[]>(thirdTier)
@@ -92,6 +94,10 @@ export default function DraggableQASection({
   } = useMatchSubmission()
 
   const { isConnected } = useAccount()
+
+  // Define login and submit states
+  const isLoggedIn = isConnected || isFarcasterConnected
+  const canSubmit = isConnected && isAdmin
 
   // Add connection check to submit handler
   const handleSubmit = useCallback(async () => {
@@ -146,7 +152,7 @@ export default function DraggableQASection({
   }, [])
 
   const handleDragEnd = (result: any) => {
-    if (!result.destination || !isAdmin) return
+    if (!result.destination || !(isConnected || isFarcasterConnected)) return
 
     const sourceList =
       result.source.droppableId === 'questions'
@@ -173,6 +179,8 @@ export default function DraggableQASection({
     fromIndex: number,
     toIndex: number,
   ) => {
+    if (!(isConnected || isFarcasterConnected)) return
+
     if (type === 'pair') {
       // Move the entire pair
       const newSecondTier = [...localSecondTier]
@@ -858,19 +866,19 @@ export default function DraggableQASection({
 
   // Enhanced submit section
   const renderSubmitSection = () => {
-    if (isAdmin) return null
+    if (isAdmin && !isLoggedIn) return null
 
     return (
       <div className="submit-section fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            {!isConnected && isAdmin ? (
-              <span className="text-amber-600">
-                Connect wallet to submit your matches
-              </span>
-            ) : !isAdmin ? (
+            {!isLoggedIn ? (
               <span className="text-amber-600">
                 Login to play, learn & earn POAPs
+              </span>
+            ) : !isConnected ? (
+              <span className="text-amber-600">
+                Connect wallet to submit your matches
               </span>
             ) : isSubmitting ? (
               <span className="text-indigo-600">Submitting to Optimism...</span>
@@ -885,9 +893,11 @@ export default function DraggableQASection({
 
           <button
             onClick={handleSubmit}
-            disabled={!isConnected || !isAdmin || isSubmitting || isSubmitted}
+            disabled={!canSubmit || isSubmitting || isSubmitted}
             className={`px-6 py-2 rounded-lg font-medium transition-all ${
-              !isConnected || !isAdmin
+              !isLoggedIn
+                ? 'bg-gray-100 text-gray-400'
+                : !isConnected
                 ? 'bg-gray-100 text-gray-400'
                 : isSubmitting
                 ? 'bg-indigo-100 text-indigo-400'
@@ -896,7 +906,7 @@ export default function DraggableQASection({
                 : 'bg-indigo-600 text-white hover:bg-indigo-700'
             }`}
           >
-            {!isAdmin
+            {!isLoggedIn
               ? 'Login to Play'
               : !isConnected
               ? 'Connect Wallet'
@@ -917,9 +927,10 @@ export default function DraggableQASection({
       {/* Add padding to account for fixed submit section */}
       {!isMobile && (
         <div className="controls-header flex justify-center items-center gap-8 mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg">
-          {/* Left section - Move controls */}
+          {/* Controls Container */}
           <div className="flex items-center gap-8">
-            <div className="legend-section flex items-center gap-4">
+            {/* Move Controls */}
+            <div className="flex items-center gap-4">
               <div className="legend-item flex items-center gap-2">
                 <button className="quick-move-pair-button" disabled>
                   ⇅
@@ -933,45 +944,45 @@ export default function DraggableQASection({
                 <span>response</span>
               </div>
             </div>
-          </div>
 
-          {/* Center section - View and Mode controls */}
-          <div className="flex items-center gap-4">
-            <a
-              href={window.location.href.split('?url=')[1]}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 text-sm bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors flex items-center gap-2"
-            >
-              <img
-                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/farcaster.svg"
-                alt="Farcaster"
-                className="w-4 h-4"
-              />
-              View AMA
-            </a>
-
-            <button
-              onClick={() => setIsPairedMode(!isPairedMode)}
-              className="px-4 py-2 text-sm bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
-            >
-              {isPairedMode ? 'Switch to Matching' : 'Switch to Paired'}
-            </button>
-          </div>
-
-          {/* Right section - Stack controls */}
-          <div className="legend-item flex items-center gap-2">
-            <button className="stack-button" disabled>
-              <svg
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="currentColor"
+            {/* View and Mode Controls */}
+            <div className="flex items-center gap-4">
+              <a
+                href={window.location.href.split('?url=')[1]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 text-sm bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
-                <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-              </svg>
-            </button>
-            <span>Stack responses (max 3)</span>
+                <img
+                  src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/farcaster.svg"
+                  alt="Farcaster"
+                  className="w-4 h-4"
+                />
+                View AMA
+              </a>
+
+              <button
+                onClick={() => setIsPairedMode(!isPairedMode)}
+                className="px-4 py-2 text-sm bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+              >
+                {isPairedMode ? 'Switch to Matching' : 'Switch to Paired'}
+              </button>
+            </div>
+
+            {/* Stack Controls */}
+            <div className="legend-item flex items-center gap-2">
+              <button className="stack-button" disabled>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                >
+                  <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+                </svg>
+              </button>
+              <span>Stack responses (max 3)</span>
+            </div>
           </div>
         </div>
       )}
@@ -979,13 +990,13 @@ export default function DraggableQASection({
       <div className="submit-section fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            {!isConnected && isAdmin ? (
-              <span className="text-amber-600">
-                Connect wallet to submit your matches
-              </span>
-            ) : !isAdmin ? (
+            {!isLoggedIn ? (
               <span className="text-amber-600">
                 Login to play, learn & earn POAPs
+              </span>
+            ) : !isConnected ? (
+              <span className="text-amber-600">
+                Connect wallet to submit your matches
               </span>
             ) : isSubmitting ? (
               <span className="text-indigo-600">Submitting to Optimism...</span>
@@ -1000,9 +1011,11 @@ export default function DraggableQASection({
 
           <button
             onClick={handleSubmit}
-            disabled={!isConnected || !isAdmin || isSubmitting || isSubmitted}
+            disabled={!canSubmit || isSubmitting || isSubmitted}
             className={`px-6 py-2 rounded-lg font-medium transition-all ${
-              !isConnected || !isAdmin
+              !isLoggedIn
+                ? 'bg-gray-100 text-gray-400'
+                : !isConnected
                 ? 'bg-gray-100 text-gray-400'
                 : isSubmitting
                 ? 'bg-indigo-100 text-indigo-400'
@@ -1011,7 +1024,7 @@ export default function DraggableQASection({
                 : 'bg-indigo-600 text-white hover:bg-indigo-700'
             }`}
           >
-            {!isAdmin
+            {!isLoggedIn
               ? 'Login to Play'
               : !isConnected
               ? 'Connect Wallet'

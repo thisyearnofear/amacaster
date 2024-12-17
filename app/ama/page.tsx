@@ -59,13 +59,16 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
   const [hostUser, setHostUser] = useState<Author | null>(null)
   const [guestUser, setGuestUser] = useState<Author | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isFarcasterConnected, setIsFarcasterConnected] = useState(false)
 
   // Update admin state based on authentication
   useEffect(() => {
     const checkAuth = () => {
       const neynarSignerUUID = localStorage.getItem('neynar_signer_uuid')
       const neynarUserData = localStorage.getItem('neynar_user_data')
-      setIsAdmin(!!neynarSignerUUID && !!neynarUserData)
+      const isConnected = !!neynarSignerUUID && !!neynarUserData
+      setIsFarcasterConnected(isConnected)
+      setIsAdmin(isConnected)
     }
 
     // Check initially
@@ -85,7 +88,9 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
       ) {
         const neynarSignerUUID = localStorage.getItem('neynar_signer_uuid')
         const neynarUserData = localStorage.getItem('neynar_user_data')
-        setIsAdmin(!!neynarSignerUUID && !!neynarUserData)
+        const isConnected = !!neynarSignerUUID && !!neynarUserData
+        setIsFarcasterConnected(isConnected)
+        setIsAdmin(isConnected)
       }
     }
 
@@ -305,6 +310,7 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
         secondTier={secondTier}
         thirdTier={thirdTier}
         isAdmin={isAdmin}
+        isFarcasterConnected={isFarcasterConnected}
         onOrderChange={async (newSecondTier, newThirdTier) => {
           if (!isAdmin) return
 
