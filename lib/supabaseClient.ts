@@ -1,16 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL')
-}
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY')
-}
-
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-)
+// Make Supabase client optional for now
+export const supabase =
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ? createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      )
+    : null
 
 // Types for our database schema
 export interface AMASession {
@@ -44,12 +42,14 @@ export interface UserMatch {
   created_at: string
 }
 
-// Helper functions for database operations
+// Helper functions for database operations - make them no-op for now
 export async function createOrUpdateAMASession(
   castHash: string,
   hostFid: string,
   title: string,
 ): Promise<AMASession | null> {
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('ama_sessions')
     .upsert(
@@ -75,6 +75,8 @@ export async function saveQAPairs(
   sessionId: string,
   pairs: { questionHash: string; answerHash: string; position: number }[],
 ): Promise<boolean> {
+  if (!supabase) return true // Return success when Supabase is not configured
+
   const { error } = await supabase.from('qa_pairs').upsert(
     pairs.map(({ questionHash, answerHash, position }) => ({
       session_id: sessionId,
@@ -100,6 +102,8 @@ export async function saveUserMatch(
   matches: { questionHash: string; answerHash: string }[],
   score: number,
 ): Promise<boolean> {
+  if (!supabase) return true // Return success when Supabase is not configured
+
   const { error } = await supabase.from('user_matches').insert({
     user_fid: userFid,
     session_id: sessionId,
@@ -118,6 +122,8 @@ export async function saveUserMatch(
 export async function getAMASession(
   castHash: string,
 ): Promise<AMASession | null> {
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('ama_sessions')
     .select()
@@ -133,6 +139,8 @@ export async function getAMASession(
 }
 
 export async function getQAPairs(sessionId: string): Promise<QAPair[]> {
+  if (!supabase) return []
+
   const { data, error } = await supabase
     .from('qa_pairs')
     .select()
@@ -151,6 +159,8 @@ export async function getUserMatches(
   sessionId: string,
   userFid: string,
 ): Promise<UserMatch[]> {
+  if (!supabase) return []
+
   const { data, error } = await supabase
     .from('user_matches')
     .select()

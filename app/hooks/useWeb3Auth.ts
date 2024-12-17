@@ -9,7 +9,7 @@ export function useWeb3Auth() {
   const [error, setError] = useState<string | null>(null)
 
   const signIn = useCallback(async () => {
-    if (!address) return null
+    if (!address || !supabase) return null
     setIsLoading(true)
     setError(null)
 
@@ -59,6 +59,7 @@ export function useWeb3Auth() {
   }, [address, signMessageAsync])
 
   const signOut = useCallback(async () => {
+    if (!supabase) return
     setError(null)
     try {
       await supabase.auth.signOut()
@@ -70,7 +71,7 @@ export function useWeb3Auth() {
 
   // Auto sign-in when wallet is connected
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && supabase) {
       signIn()
     }
   }, [isConnected, address, signIn])
