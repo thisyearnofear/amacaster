@@ -203,7 +203,7 @@ export default function Home() {
             <div className="mb-3 text-2xl">🎯</div>
             <h4 className="font-medium mb-2">Crowdsource truth</h4>
             <p className="text-sm text-gray-600">
-              Match questions with answers from farcaster AMA's, predict
+              Match questions with answers from farcaster AMA&apos;s, predict
               rankings of question usefulness
             </p>
           </div>
