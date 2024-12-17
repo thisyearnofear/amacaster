@@ -2,6 +2,28 @@
 
 One-stop Farcaster AMA platform with gamified Q&A matching and Web3 integration.
 
+## Current Testing Phase
+
+The application is currently in testing phase on Optimism Sepolia testnet. The smart contract for Q&A matching is deployed at:
+`0xa226c82f1b6983aBb7287Cd4d83C2aEC802A183F`
+
+### Testing Requirements
+
+1. **Network**: Optimism Sepolia Testnet
+2. **Test ETH**: Required for submitting matches
+   - Get test ETH from the [Optimism Sepolia PoW Faucet](https://www.ethereum-ecosystem.com/faucets/optimism-sepolia)
+   - This faucet requires mining work to prevent spam and ensure fair distribution
+3. **Wallet**: Any Web3 wallet (MetaMask, Rainbow, etc.)
+
+### Current Features in Testing
+
+- [x] Q&A Matching Interface
+- [x] On-chain Match Submission
+- [x] Answer Stacking (up to 3 answers)
+- [x] Mobile-responsive Design
+- [x] Farcaster Authentication
+- [x] Web3 Wallet Integration
+
 ## Features
 
 ### Authentication
@@ -36,6 +58,9 @@ NEXT_PUBLIC_POAP_API_KEY=your_poap_api_key
 
 # Optional: Analytics
 NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_key
+
+# Contract Configuration
+NEXT_PUBLIC_CONTRACT_ADDRESS=0xa226c82f1b6983aBb7287Cd4d83C2aEC802A183F
 ```
 
 ### Infrastructure Recommendations
@@ -65,27 +90,29 @@ NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_key
 
 ## Development Roadmap
 
-### Phase 1: Core Matching Game (Current)
+### Phase 1: Core Matching Game (✓ Completed)
 
 - ✓ Basic Q&A pairing interface
 - ✓ Drag and drop functionality
 - ✓ Answer stacking for multiple responses
 - ✓ Mobile-responsive design
+- ✓ Smart contract deployment
+- ✓ On-chain submission
 
-**Next Steps:**
+### Phase 2: Consensus & Scoring (Current)
 
-1. **Game State Management**
+1. **Match Validation**
 
-   - [ ] Track user's current matches
-   - [ ] Compare against correct pairings
+   - [ ] Compare user matches with correct pairings
    - [ ] Visual feedback for correct/incorrect matches
+   - [ ] Score calculation based on accuracy
 
-2. **Basic Scoring System**
-   - [ ] Points for correct matches
-   - [ ] Time-based bonuses
-   - [ ] Streak multipliers
+2. **Leaderboard System**
+   - [ ] User rankings
+   - [ ] Score history
+   - [ ] Achievement badges
 
-### Phase 2: Crowdsourced Consensus
+### Phase 3: Crowdsourced Consensus
 
 1. **Matching Consensus System**
 
@@ -101,7 +128,7 @@ NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_key
    - Confidence levels per pairing
    - User participation metrics
 
-### Phase 3: Ranking & Engagement
+### Phase 4: Ranking & Engagement
 
 1. **Question Ranking System**
 
@@ -116,7 +143,7 @@ NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_key
    - Resource categorization
    - Quality control mechanisms
 
-### Phase 4: Web3 Integration
+### Phase 5: Web3 Integration
 
 1. **Basic Web3 Features**
 
@@ -130,7 +157,7 @@ NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_key
    - Contribution tracking
    - Basic reputation system
 
-### Phase 5: Gamification & Rewards
+### Phase 6: Gamification & Rewards
 
 1. **Point System**
 
@@ -144,7 +171,7 @@ NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_key
    - Milestone rewards
    - Special recognition for key contributors
 
-### Phase 6: NFT & Ownership
+### Phase 7: NFT & Ownership
 
 1. **NFT Infrastructure**
 

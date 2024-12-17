@@ -1,20 +1,20 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { Providers } from "./components/Providers";
-import { AuthContainer } from "./components/AuthContainer";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { Providers } from './components/Providers'
+import { AuthContainer } from './components/AuthContainer'
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "AMACASTER",
-  description: "One-stop FC AMA shop",
-};
+  title: 'AMACASTER',
+  description: 'One-stop FC AMA shop',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en">
@@ -25,5 +25,5 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
-  );
+  )
 }

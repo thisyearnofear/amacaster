@@ -18,8 +18,11 @@
     "@neynar/nodejs-sdk": "^2.2.0",
     "@noble/hashes": "^1.6.1",
     "@rainbow-me/rainbowkit": "^2.2.1",
+    "@supabase/supabase-js": "^2.47.8",
     "@tanstack/react-query": "^5.62.7",
     "@types/react-slick": "^0.23.13",
+    "@web3modal/ethereum": "^2.7.1",
+    "@web3modal/react": "^2.7.1",
     "axios": "^1.6.7",
     "debug": "^4.4.0",
     "linkify-react": "^4.1.1",
@@ -32,12 +35,16 @@
     "react-icons": "^4.11.0",
     "react-slick": "^0.30.2",
     "slick-carousel": "^1.8.1",
+    "supabase-cli": "^0.0.21",
     "viem": "^2.21.55",
     "wagmi": "^2.14.1"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-verify": "^2.0.12",
     "@svgr/webpack": "^8.1.0",
-    "@types/node": "^20",
+    "@types/chai": "^5.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.10.2",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.17",
@@ -45,6 +52,7 @@
     "eslint-config-next": "14.0.1",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
   }
 }

@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import type { Cast } from '../types'
 import SafeImage from './SafeImage'
+import { useMatchSubmission } from '../hooks/useMatchSubmission'
+import { useAccount } from 'wagmi'
 
 // Import styles in a way that works with Next.js
 import 'slick-carousel/slick/slick.css'
@@ -82,6 +84,44 @@ export default function DraggableQASection({
   const [currentAnswerIndices, setCurrentAnswerIndices] = useState<{
     [key: string]: number
   }>({})
+
+  const {
+    submitMatches,
+    isLoading: isSubmitting,
+    isSuccess: isSubmitted,
+  } = useMatchSubmission()
+
+  const { isConnected } = useAccount()
+
+  // Add connection check to submit handler
+  const handleSubmit = useCallback(async () => {
+    if (!isConnected) {
+      // You might want to trigger wallet connection here
+      return
+    }
+
+    try {
+      // Create matches array
+      const matches = secondTier.map((question, index) => ({
+        questionHash: question.hash,
+        answerHash: isAnswerStack(thirdTier[index])
+          ? thirdTier[index].answers[0].hash
+          : thirdTier[index].hash,
+      }))
+
+      // Create rankings array (currently just using the order as ranking)
+      const rankings = secondTier.map((_, index) => index)
+
+      // Submit to blockchain
+      await submitMatches(
+        secondTier[0].parent_hash || secondTier[0].hash,
+        matches,
+        rankings,
+      )
+    } catch (error) {
+      console.error('Error submitting matches:', error)
+    }
+  }, [secondTier, thirdTier, submitMatches, isConnected])
 
   // Function to handle answer navigation
   const handleAnswerNavigation = (stackId: string, index: number) => {
@@ -816,1169 +856,173 @@ export default function DraggableQASection({
     return Math.max(baseHeight, calculatedHeight + extraPadding)
   }
 
-  return (
-    <div>
-      {!isMobile && (
-        <div className="controls-header">
-          <div className="controls-legend">
-            {isAdmin && (
-              <>
-                <div className="legend-section">
-                  <span className="legend-title">Move:</span>
-                  <div className="legend-item">
-                    <button className="quick-move-pair-button" disabled>
-                      ⇅
-                    </button>
-                    <span>pair</span>
-                  </div>
-                  <div className="legend-item">
-                    <button className="quick-move-button" disabled>
-                      ⇄
-                    </button>
-                    <span>response</span>
-                  </div>
-                </div>
-                <div className="legend-item">
-                  <button className="stack-button" disabled>
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                    >
-                      <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-                    </svg>
-                  </button>
-                  <span>Stack responses (max 3)</span>
-                </div>
-              </>
+  // Enhanced submit section
+  const renderSubmitSection = () => {
+    if (isAdmin) return null
+
+    return (
+      <div className="submit-section fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            {!isConnected && isAdmin ? (
+              <span className="text-amber-600">
+                Connect wallet to submit your matches
+              </span>
+            ) : !isAdmin ? (
+              <span className="text-amber-600">
+                Login to play, learn & earn POAPs
+              </span>
+            ) : isSubmitting ? (
+              <span className="text-indigo-600">Submitting to Optimism...</span>
+            ) : isSubmitted ? (
+              <span className="text-green-600">
+                ✓ Matches submitted successfully
+              </span>
+            ) : (
+              <span>Ready to submit your matches?</span>
             )}
           </div>
+
           <button
-            onClick={() => setIsPairedMode(!isPairedMode)}
-            className="mode-toggle"
+            onClick={handleSubmit}
+            disabled={!isConnected || !isAdmin || isSubmitting || isSubmitted}
+            className={`px-6 py-2 rounded-lg font-medium transition-all ${
+              !isConnected || !isAdmin
+                ? 'bg-gray-100 text-gray-400'
+                : isSubmitting
+                ? 'bg-indigo-100 text-indigo-400'
+                : isSubmitted
+                ? 'bg-green-100 text-green-600'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
           >
-            {isPairedMode ? 'Switch to Matching Mode' : 'Switch to Paired Mode'}
+            {!isAdmin
+              ? 'Login to Play'
+              : !isConnected
+              ? 'Connect Wallet'
+              : isSubmitting
+              ? 'Submitting...'
+              : isSubmitted
+              ? 'Submitted!'
+              : 'Submit Matches'}
           </button>
         </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="pb-20">
+      {' '}
+      {/* Add padding to account for fixed submit section */}
+      {!isMobile && (
+        <div className="controls-header flex justify-center items-center gap-8 mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg">
+          {/* Left section - Move controls */}
+          <div className="flex items-center gap-8">
+            <div className="legend-section flex items-center gap-4">
+              <div className="legend-item flex items-center gap-2">
+                <button className="quick-move-pair-button" disabled>
+                  ⇅
+                </button>
+                <span>pair</span>
+              </div>
+              <div className="legend-item flex items-center gap-2">
+                <button className="quick-move-button" disabled>
+                  ⇄
+                </button>
+                <span>response</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Center section - View and Mode controls */}
+          <div className="flex items-center gap-4">
+            <a
+              href={window.location.href.split('?url=')[1]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 text-sm bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <img
+                src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/farcaster.svg"
+                alt="Farcaster"
+                className="w-4 h-4"
+              />
+              View AMA
+            </a>
+
+            <button
+              onClick={() => setIsPairedMode(!isPairedMode)}
+              className="px-4 py-2 text-sm bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors"
+            >
+              {isPairedMode ? 'Switch to Matching' : 'Switch to Paired'}
+            </button>
+          </div>
+
+          {/* Right section - Stack controls */}
+          <div className="legend-item flex items-center gap-2">
+            <button className="stack-button" disabled>
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="currentColor"
+              >
+                <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+              </svg>
+            </button>
+            <span>Stack responses (max 3)</span>
+          </div>
+        </div>
       )}
-
-      <style jsx>{`
-        .answer-stack {
-          position: relative;
-        }
-
-        .stack-indicator {
-          position: absolute;
-          top: -8px;
-          right: -8px;
-          background: #6366f1;
-          color: white;
-          border-radius: 9999px;
-          padding: 2px 6px;
-          font-size: 0.75rem;
-          z-index: 10;
-        }
-
-        .stack-navigation {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          margin-top: 0.5rem;
-          padding: 0 1rem;
-        }
-
-        .stack-pills {
-          display: flex;
-          gap: 0.25rem;
-          justify-content: center;
-        }
-
-        .stack-pill {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #cbd5e0;
-          transition: all 0.2s;
-          border: none;
-          padding: 0;
-          cursor: pointer;
-        }
-
-        .stack-pill.active {
-          background: #6366f1;
-          transform: scale(1.2);
-        }
-
-        .admin-controls {
-          position: absolute;
-          right: -2.5rem;
-          top: 50%;
-          transform: translateY(-50%);
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        .quick-move-button {
-          background: white;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 1.5rem;
-          height: 1.5rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 0.875rem;
-        }
-
-        .quick-move-button:hover {
-          background: #6366f1;
-          color: white;
-        }
-
-        .quick-move-button-left {
-          right: -2.5rem;
-        }
-
-        .quick-move-button-right {
-          left: -2.5rem;
-        }
-
-        .unstack-button {
-          background: white;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 1.5rem;
-          height: 1.5rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 0.875rem;
-        }
-
-        .unstack-button:hover {
-          background: #6366f1;
-          color: white;
-        }
-
-        @media (max-width: 768px) {
-          .stack-navigation {
-            padding: 0 0.5rem;
-          }
-
-          .stack-pill {
-            width: 6px;
-            height: 6px;
-          }
-
-          .admin-controls {
-            right: -2rem;
-          }
-
-          .quick-move-button,
-          .unstack-button {
-            width: 1.25rem;
-            height: 1.25rem;
-            font-size: 0.75rem;
-          }
-
-          .quick-move-button-left {
-            right: -2rem;
-          }
-
-          .quick-move-button-right {
-            left: -2rem;
-          }
-        }
-
-        .message-bubble {
-          min-height: 160px;
-          padding: 2rem;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-          margin: 1.5rem 0;
-        }
-
-        .message-content {
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-          position: relative;
-          padding: 0.5rem;
-        }
-
-        .admin-controls {
-          position: relative;
-          display: flex;
-          justify-content: center;
-          padding: 1rem 0 0.5rem;
-          margin-top: auto;
-          border-top: 1px solid rgba(99, 102, 241, 0.1);
-        }
-
-        .stack-navigation {
-          position: relative;
-          display: flex;
-          justify-content: center;
-          padding: 0.75rem 0;
-        }
-
-        .navigation-controls {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          background: rgba(99, 102, 241, 0.05);
-          padding: 0.5rem 1rem;
-          border-radius: 9999px;
-        }
-
-        .stack-indicator {
-          position: absolute;
-          top: 0.5rem;
-          right: 0.5rem;
-          background: #6366f1;
-          color: white;
-          border-radius: 9999px;
-          padding: 0.25rem 0.5rem;
-          font-size: 0.875rem;
-          z-index: 20;
-        }
-
-        .quick-move-button,
-        .stack-button,
-        .control-button {
-          position: relative;
-          background: white;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 2rem;
-          height: 2rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          z-index: 20;
-        }
-
-        .control-buttons {
-          display: flex;
-          gap: 1.25rem;
-          align-items: center;
-          padding: 0 0.5rem;
-        }
-
-        @media (max-width: 768px) {
-          .message-bubble {
-            padding: 1.75rem;
-            min-height: 140px;
-          }
-
-          .control-button,
-          .quick-move-button,
-          .stack-button {
-            width: 1.75rem;
-            height: 1.75rem;
-          }
-
-          .navigation-controls {
-            padding: 0.375rem 0.75rem;
-          }
-        }
-
-        .message-bubble {
-          min-height: 120px;
-          padding: 1rem;
-          position: relative;
-        }
-
-        .message-bubble-left {
-          border-radius: 1rem;
-          background-color: #f3f4f6;
-          margin-right: 2rem;
-        }
-
-        .message-bubble-right {
-          border-radius: 1rem;
-          background-color: #e0e7ff;
-          margin-left: 2rem;
-        }
-
-        .stack-button {
-          background: white;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 1.5rem;
-          height: 1.5rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          margin-top: 0.5rem;
-        }
-
-        .stack-button:hover {
-          background: #6366f1;
-          color: white;
-        }
-
-        @media (max-width: 768px) {
-          .stack-button {
-            width: 1.25rem;
-            height: 1.25rem;
-            font-size: 0.75rem;
-          }
-        }
-
-        .answer-container {
-          position: relative;
-          display: flex;
-          align-items: stretch;
-          overflow: hidden;
-        }
-
-        .next-answer-peek {
-          position: absolute;
-          right: 0;
-          top: 0;
-          bottom: 0;
-          width: 80px;
-          background: linear-gradient(to right, transparent, #e0e7ff);
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-          opacity: 0.7;
-          transition: opacity 0.2s;
-        }
-
-        .next-answer-peek:hover {
-          opacity: 1;
-        }
-
-        .peek-content {
-          padding: 0.5rem;
-          font-size: 0.75rem;
-          color: #4f46e5;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .peek-author {
-          font-weight: 600;
-          margin-bottom: 0.25rem;
-        }
-
-        .peek-text {
-          opacity: 0.8;
-        }
-
-        .combine-button {
-          background: white;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 1.5rem;
-          height: 1.5rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 1rem;
-        }
-
-        .combine-button:hover {
-          background: #6366f1;
-          color: white;
-        }
-
-        .combine-icon {
-          line-height: 1;
-        }
-
-        .stack-indicator {
-          position: absolute;
-          top: -8px;
-          right: -8px;
-          background: #6366f1;
-          color: white;
-          border-radius: 9999px;
-          padding: 2px 6px;
-          font-size: 0.75rem;
-          z-index: 10;
-        }
-
-        @media (max-width: 768px) {
-          .next-answer-peek {
-            width: 60px;
-          }
-
-          .combine-button {
-            width: 1.25rem;
-            height: 1.25rem;
-            font-size: 0.875rem;
-          }
-        }
-
-        .combine-control {
-          position: absolute;
-          right: -2.5rem;
-          bottom: -1.5rem;
-          z-index: 20;
-        }
-
-        .carousel-container {
-          position: relative;
-          width: 100%;
-          overflow: hidden;
-        }
-
-        .carousel-track {
-          display: flex;
-          transition: transform 0.3s ease;
-          width: 100%;
-        }
-
-        .carousel-item {
-          flex: 0 0 100%;
-          width: 100%;
-        }
-
-        .carousel-controls {
-          position: absolute;
-          top: 50%;
-          left: 0;
-          right: 0;
-          transform: translateY(-50%);
-          display: flex;
-          justify-content: space-between;
-          pointer-events: none;
-          padding: 0 1rem;
-        }
-
-        .carousel-control {
-          background: rgba(99, 102, 241, 0.1);
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 2rem;
-          height: 2rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          pointer-events: auto;
-          font-size: 1.5rem;
-          line-height: 1;
-        }
-
-        .carousel-control:hover {
-          background: rgba(99, 102, 241, 0.2);
-        }
-
-        .carousel-control.prev {
-          margin-right: auto;
-        }
-
-        .carousel-control.next {
-          margin-left: auto;
-        }
-
-        @media (max-width: 768px) {
-          .combine-control {
-            right: -2rem;
-            bottom: -1.25rem;
-          }
-
-          .carousel-control {
-            width: 1.5rem;
-            height: 1.5rem;
-            font-size: 1.25rem;
-          }
-        }
-
-        .stack-button {
-          background: white;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 1.5rem;
-          height: 1.5rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          margin-top: 0.5rem;
-        }
-
-        .stack-button:hover {
-          background: #6366f1;
-          color: white;
-        }
-
-        .stack-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .stack-indicator {
-          position: absolute;
-          top: -8px;
-          right: -8px;
-          background: #6366f1;
-          color: white;
-          border-radius: 9999px;
-          padding: 2px 6px;
-          font-size: 0.75rem;
-          z-index: 10;
-        }
-
-        :global(.slick-prev),
-        :global(.slick-next) {
-          z-index: 10;
-        }
-
-        :global(.slick-prev) {
-          left: -25px;
-        }
-
-        :global(.slick-next) {
-          right: -25px;
-        }
-
-        :global(.slick-dots) {
-          bottom: -25px;
-        }
-
-        .stack-slide {
-          outline: none;
-        }
-
-        @media (max-width: 768px) {
-          :global(.slick-prev) {
-            left: -15px;
-          }
-
-          :global(.slick-next) {
-            right: -15px;
-          }
-        }
-
-        .slider-wrapper {
-          position: relative;
-          margin: 0 25px;
-        }
-
-        .slider-wrapper :global(.slick-prev),
-        .slider-wrapper :global(.slick-next) {
-          z-index: 10;
-        }
-
-        .slider-wrapper :global(.slick-prev) {
-          left: -25px;
-        }
-
-        .slider-wrapper :global(.slick-next) {
-          right: -25px;
-        }
-
-        .slider-wrapper :global(.slick-dots) {
-          bottom: -25px;
-        }
-
-        .slider-wrapper :global(.slick-slide) {
-          padding: 0 5px;
-        }
-
-        .stack-slide {
-          outline: none;
-        }
-
-        @media (max-width: 768px) {
-          .slider-wrapper {
-            margin: 0 15px;
-          }
-
-          .slider-wrapper :global(.slick-prev) {
-            left: -15px;
-          }
-
-          .slider-wrapper :global(.slick-next) {
-            right: -15px;
-          }
-        }
-
-        .slider-loading {
-          min-height: 120px;
-          position: relative;
-        }
-
-        .stack-container {
-          position: relative;
-          width: 100%;
-        }
-
-        .stack-carousel {
-          position: relative;
-          overflow: hidden;
-          width: 100%;
-        }
-
-        .stack-track {
-          display: flex;
-          transition: transform 0.3s ease;
-          width: 100%;
-        }
-
-        .stack-slide {
-          flex: 0 0 100%;
-          width: 100%;
-          padding: 1rem;
-        }
-
-        .stack-controls {
-          position: absolute;
-          top: 50%;
-          left: 0;
-          right: 0;
-          transform: translateY(-50%);
-          display: flex;
-          justify-content: space-between;
-          padding: 0 0.5rem;
-          pointer-events: none;
-        }
-
-        .stack-nav {
-          background: rgba(99, 102, 241, 0.1);
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 2rem;
-          height: 2rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          pointer-events: auto;
-          font-size: 1.5rem;
-          line-height: 1;
-        }
-
-        .stack-nav:hover {
-          background: rgba(99, 102, 241, 0.2);
-        }
-
-        .stack-navigation {
-          position: absolute;
-          bottom: -1.5rem;
-          left: 0;
-          right: 0;
-          display: flex;
-          justify-content: center;
-          padding: 0.5rem 0;
-        }
-
-        .stack-pills {
-          display: flex;
-          gap: 0.25rem;
-        }
-
-        .stack-pill {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #cbd5e0;
-          transition: all 0.2s;
-          border: none;
-          padding: 0;
-          cursor: pointer;
-        }
-
-        .stack-pill.active {
-          background: #6366f1;
-          transform: scale(1.2);
-        }
-
-        .stack-indicator {
-          position: absolute;
-          top: -0.5rem;
-          right: -0.5rem;
-          background: #6366f1;
-          color: white;
-          border-radius: 9999px;
-          padding: 0.125rem 0.375rem;
-          font-size: 0.75rem;
-          z-index: 10;
-        }
-
-        @media (max-width: 768px) {
-          .stack-nav {
-            width: 1.5rem;
-            height: 1.5rem;
-            font-size: 1.25rem;
-          }
-
-          .stack-pill {
-            width: 4px;
-            height: 4px;
-          }
-        }
-
-        .controls-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1.5rem;
-          padding: 0.5rem;
-          background: #f9fafb;
-          border-radius: 0.5rem;
-        }
-
-        .controls-legend {
-          display: flex;
-          gap: 1.5rem;
-          align-items: center;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.875rem;
-          color: #4b5563;
-        }
-
-        .legend-item button {
-          opacity: 0.7;
-          cursor: default;
-        }
-
-        .legend-item button:hover {
-          background: white;
-          color: #6366f1;
-        }
-
-        .stack-indicator {
-          position: absolute;
-          top: -0.5rem;
-          right: -0.5rem;
-          background: #6366f1;
-          color: white;
-          border-radius: 9999px;
-          padding: 0.25rem 0.375rem;
-          font-size: 0.75rem;
-          z-index: 10;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-
-        .stack-icon {
-          opacity: 0.9;
-        }
-
-        .stack-carousel {
-          position: relative;
-          overflow: hidden;
-          width: 100%;
-          min-height: 120px;
-        }
-
-        .stack-track {
-          display: flex;
-          transition: transform 0.3s ease;
-          width: 100%;
-          height: 100%;
-        }
-
-        .stack-slide {
-          flex: 0 0 100%;
-          width: 100%;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          position: absolute;
-          top: 0;
-          left: 0;
-          padding: 1rem;
-        }
-
-        .stack-slide.active {
-          opacity: 1;
-          position: relative;
-        }
-
-        .legend-section {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .legend-title {
-          color: #6b7280;
-          font-size: 0.875rem;
-        }
-
-        .controls-legend {
-          display: flex;
-          gap: 2rem;
-          align-items: center;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.875rem;
-          color: #4b5563;
-        }
-
-        .legend-item button {
-          opacity: 0.7;
-          cursor: default;
-        }
-
-        .stack-more-button {
-          position: absolute;
-          right: -2.5rem;
-          top: 50%;
-          transform: translateY(-50%);
-          background: white;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 1.5rem;
-          height: 1.5rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .stack-more-button:hover {
-          background: #6366f1;
-          color: white;
-        }
-
-        @media (max-width: 768px) {
-          .stack-more-button {
-            right: -2rem;
-            width: 1.25rem;
-            height: 1.25rem;
-          }
-        }
-
-        .stack-navigation {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.5rem 1rem;
-          border-top: 1px solid rgba(99, 102, 241, 0.1);
-          margin-top: 0.5rem;
-        }
-
-        .stack-info {
-          font-size: 0.875rem;
-          color: #6366f1;
-        }
-
-        .stack-controls {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .stack-nav {
-          background: transparent;
-          border: none;
-          color: #6366f1;
-          font-size: 1.25rem;
-          padding: 0.25rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 2rem;
-          height: 2rem;
-          border-radius: 9999px;
-        }
-
-        .stack-nav:hover {
-          background: rgba(99, 102, 241, 0.1);
-        }
-
-        .admin-controls {
-          position: absolute;
-          right: -2.5rem;
-          top: 50%;
-          transform: translateY(-50%);
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        .stack-button,
-        .unstack-button,
-        .quick-move-button {
-          background: white;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 1.5rem;
-          height: 1.5rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .stack-button:hover,
-        .unstack-button:hover,
-        .quick-move-button:hover {
-          background: #6366f1;
-          color: white;
-        }
-
-        @media (max-width: 768px) {
-          .admin-controls {
-            right: -2rem;
-          }
-
-          .stack-button,
-          .unstack-button,
-          .quick-move-button {
-            width: 1.25rem;
-            height: 1.25rem;
-          }
-
-          .stack-nav {
-            font-size: 1rem;
-            width: 1.5rem;
-            height: 1.5rem;
-          }
-        }
-
-        .message-bubble {
-          min-height: 120px;
-          padding: 1.75rem;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          margin: 0.75rem 0;
-        }
-
-        .message-content {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .stack-navigation {
-          display: flex;
-          justify-content: center;
-          padding: 0.5rem 0;
-        }
-
-        .navigation-controls {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          background: rgba(99, 102, 241, 0.05);
-          padding: 0.375rem 0.75rem;
-          border-radius: 9999px;
-        }
-
-        .stack-info {
-          font-size: 0.875rem;
-          color: #6366f1;
-          min-width: 3.5rem;
-          text-align: center;
-        }
-
-        .admin-controls {
-          display: flex;
-          justify-content: center;
-          padding: 0.5rem 0;
-          border-top: 1px solid rgba(99, 102, 241, 0.1);
-        }
-
-        .control-buttons {
-          display: flex;
-          gap: 1rem;
-          align-items: center;
-        }
-
-        .control-button {
-          background: transparent;
-          border: 1px solid #6366f1;
-          color: #6366f1;
-          width: 1.75rem;
-          height: 1.75rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          padding: 0;
-        }
-
-        .control-button:hover {
-          background: #6366f1;
-          color: white;
-        }
-
-        .stack-nav {
-          background: transparent;
-          border: none;
-          color: #6366f1;
-          font-size: 1.25rem;
-          padding: 0;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 1.5rem;
-          height: 1.5rem;
-          opacity: 0.7;
-        }
-
-        .stack-nav:hover:not(:disabled) {
-          opacity: 1;
-        }
-
-        .stack-nav:disabled {
-          opacity: 0.3;
-          cursor: default;
-        }
-
-        @media (max-width: 768px) {
-          .message-bubble {
-            padding: 1.5rem;
-          }
-
-          .control-button {
-            width: 1.5rem;
-            height: 1.5rem;
-          }
-
-          .stack-nav {
-            font-size: 1rem;
-            width: 1.25rem;
-            height: 1.25rem;
-          }
-
-          .navigation-controls {
-            padding: 0.25rem 0.5rem;
-          }
-        }
-
-        .matching-item-container {
-          margin: 1rem 0;
-          position: relative;
-        }
-
-        .matching-pair {
-          position: relative;
-          margin: 1.5rem 0;
-        }
-
-        .answer-stack {
-          position: relative;
-          margin: 2rem 0;
-        }
-
-        .message-bubble {
-          min-height: 160px;
-          padding: 2rem;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-          margin: 1.5rem 0;
-        }
-
-        .message-bubble.stacked {
-          min-height: 200px;
-          padding: 2.5rem;
-          gap: 1.5rem;
-        }
-
-        .message-content {
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-          position: relative;
-          padding: 0.5rem;
-        }
-
-        .message-content.stacked {
-          gap: 1.5rem;
-          padding: 0.75rem;
-        }
-
-        .stack-navigation {
-          position: relative;
-          display: flex;
-          justify-content: center;
-          padding: 1rem 0;
-          margin-bottom: 0.5rem;
-        }
-
-        .navigation-controls {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          background: rgba(99, 102, 241, 0.05);
-          padding: 0.5rem 1.25rem;
-          border-radius: 9999px;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .answer-text {
-          position: relative;
-          z-index: 10;
-          padding: 0.5rem;
-        }
-
-        .answer-text.stacked {
-          padding: 0.75rem;
-          margin: 0.5rem 0;
-        }
-
-        @media (max-width: 768px) {
-          .message-bubble.stacked {
-            min-height: 180px;
-            padding: 2rem;
-          }
-
-          .message-content.stacked {
-            gap: 1.25rem;
-            padding: 0.5rem;
-          }
-        }
-      `}</style>
-
+      {/* Submit section */}
+      <div className="submit-section fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            {!isConnected && isAdmin ? (
+              <span className="text-amber-600">
+                Connect wallet to submit your matches
+              </span>
+            ) : !isAdmin ? (
+              <span className="text-amber-600">
+                Login to play, learn & earn POAPs
+              </span>
+            ) : isSubmitting ? (
+              <span className="text-indigo-600">Submitting to Optimism...</span>
+            ) : isSubmitted ? (
+              <span className="text-green-600">
+                ✓ Matches submitted successfully
+              </span>
+            ) : (
+              <span>Ready to submit your matches?</span>
+            )}
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={!isConnected || !isAdmin || isSubmitting || isSubmitted}
+            className={`px-6 py-2 rounded-lg font-medium transition-all ${
+              !isConnected || !isAdmin
+                ? 'bg-gray-100 text-gray-400'
+                : isSubmitting
+                ? 'bg-indigo-100 text-indigo-400'
+                : isSubmitted
+                ? 'bg-green-100 text-green-600'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
+          >
+            {!isAdmin
+              ? 'Login to Play'
+              : !isConnected
+              ? 'Connect Wallet'
+              : isSubmitting
+              ? 'Submitting...'
+              : isSubmitted
+              ? 'Submitted!'
+              : 'Submit Matches'}
+          </button>
+        </div>
+      </div>
       {isPairedMode ? renderPairedMode() : renderMatchingMode()}
     </div>
   )

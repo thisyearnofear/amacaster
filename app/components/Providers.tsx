@@ -4,7 +4,7 @@ import '@rainbow-me/rainbowkit/styles.css'
 import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
-import { mainnet, optimism } from 'wagmi/chains'
+import { optimismSepolia } from 'viem/chains'
 import { useState } from 'react'
 
 // Ensure we have a projectId, even in development
@@ -15,7 +15,7 @@ const projectId =
 const config = getDefaultConfig({
   appName: 'Amacaster',
   projectId,
-  chains: [optimism, mainnet],
+  chains: [optimismSepolia],
   ssr: true,
 })
 
@@ -42,7 +42,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider modalSize="compact" initialChain={optimism}>
+        <RainbowKitProvider modalSize="compact" initialChain={optimismSepolia}>
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>

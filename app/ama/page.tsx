@@ -58,13 +58,40 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
   const [amaUser, setAmaUser] = useState<Author | null>(null)
   const [hostUser, setHostUser] = useState<Author | null>(null)
   const [guestUser, setGuestUser] = useState<Author | null>(null)
-  const [isAdmin, setIsAdmin] = useState(
-    process.env.NEXT_PUBLIC_ADMIN_MODE === 'true',
-  )
+  const [isAdmin, setIsAdmin] = useState(false)
 
-  const toggleAdminMode = () => {
-    setIsAdmin((prev) => !prev)
-  }
+  // Update admin state based on authentication
+  useEffect(() => {
+    const checkAuth = () => {
+      const neynarSignerUUID = localStorage.getItem('neynar_signer_uuid')
+      const neynarUserData = localStorage.getItem('neynar_user_data')
+      setIsAdmin(!!neynarSignerUUID && !!neynarUserData)
+    }
+
+    // Check initially
+    checkAuth()
+
+    // Set up event listeners for storage changes
+    window.addEventListener('storage', checkAuth)
+    return () => window.removeEventListener('storage', checkAuth)
+  }, [])
+
+  // Add event listener for Farcaster auth changes
+  useEffect(() => {
+    const handleFarcasterAuth = (event: StorageEvent) => {
+      if (
+        event.key === 'neynar_signer_uuid' ||
+        event.key === 'neynar_user_data'
+      ) {
+        const neynarSignerUUID = localStorage.getItem('neynar_signer_uuid')
+        const neynarUserData = localStorage.getItem('neynar_user_data')
+        setIsAdmin(!!neynarSignerUUID && !!neynarUserData)
+      }
+    }
+
+    window.addEventListener('storage', handleFarcasterAuth)
+    return () => window.removeEventListener('storage', handleFarcasterAuth)
+  }, [])
 
   useEffect(() => {
     async function fetchData() {
@@ -206,13 +233,25 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
 
   return (
     <div className="ama-container">
-      {/* Admin Mode Toggle Button */}
-      <button onClick={toggleAdminMode} className="admin-toggle-button">
-        {isAdmin ? 'Disable Admin Mode' : 'Enable Admin Mode'}
-      </button>
-
       {/* AMA Header */}
       <div className="ama-header">
+        {/* Instructions Banner */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg text-center">
+          <h2 className="text-lg font-medium mb-2">AMAcaster</h2>
+          <p className="text-sm text-gray-600">
+            {isAdmin ? (
+              'Arrange questions and answers in the correct order. Stack multiple answers if needed.'
+            ) : (
+              <>
+                Match q&a pairs. Rank question usefulness. Submit onchain.
+                <br />
+                POAPs distributed [participation, understanding, usefulness] =
+                NFT split.
+              </>
+            )}
+          </p>
+        </div>
+
         {/* Guest Profile */}
         <div className="guest-profile">
           <div className="profile-tag">Guest</div>
