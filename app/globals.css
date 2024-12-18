@@ -636,3 +636,31 @@
   flex-wrap: nowrap;
   gap: 2rem;
 }
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  /* Hide Farcaster button text on mobile */
+  .neynar_signin > div > button > span {
+    display: none !important;
+  }
+
+  .neynar_signin > div > button {
+    padding: 8px !important;
+    min-width: unset !important;
+  }
+
+  /* Stack archive sections on mobile */
+  .archive-grid {
+    flex-direction: column !important;
+    gap: 2rem !important;
+  }
+
+  .archive-section {
+    max-width: 100% !important;
+  }
+
+  /* Adjust try bar width on mobile */
+  .try-input {
+    width: 240px !important;
+  }
+}

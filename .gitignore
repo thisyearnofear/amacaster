@@ -43,3 +43,4 @@ next-env.d.ts
 /contracts/typechain-types
 /contracts/coverage
 /contracts/coverage.json
+node_modules

@@ -152,8 +152,8 @@ export default function Home() {
 
       <h3 className="text-lg mb-2">archive</h3>
 
-      <div className="flex justify-center w-full gap-8 mb-4">
-        <div className="flex-1 max-w-md">
+      <div className="flex justify-center w-full gap-8 mb-4 archive-grid">
+        <div className="flex-1 max-w-md archive-section">
           <h3 className="mb-2 text-center">Hosted by DWR</h3>
           <ul className="flex flex-col items-center">
             {hostLinks.map((link) => (
@@ -175,7 +175,7 @@ export default function Home() {
           </ul>
         </div>
 
-        <div className="flex-1 max-w-md">
+        <div className="flex-1 max-w-md archive-section">
           <h3 className="mb-2 text-center">Hosted by Community</h3>
           <ul className="flex flex-col items-center">
             {communityLinks.map((link) => (
@@ -234,7 +234,7 @@ export default function Home() {
           <input
             value={warpcastURL}
             onChange={(e) => setWarpcastURL(e.target.value)}
-            className="border rounded-md mr-2 px-2 py-2 w-96 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="border rounded-md mr-2 px-2 py-2 w-96 focus:outline-none focus:ring-2 focus:ring-purple-500 try-input"
             placeholder="Insert Warpcast Link..."
           />
           <Link

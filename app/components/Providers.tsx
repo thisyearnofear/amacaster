@@ -15,7 +15,7 @@ const projectId =
 const config = getDefaultConfig({
   appName: 'Amacaster',
   projectId,
-  chains: [optimismSepolia, optimism, mainnet],
+  chains: [mainnet, optimismSepolia, optimism],
   ssr: true,
 })
 
