@@ -640,13 +640,22 @@
 /* Mobile-specific styles */
 @media (max-width: 768px) {
   /* Hide Farcaster button text on mobile */
-  .neynar_signin > div > button > span {
+  .neynar_signin [data-variant='farcaster'] {
+    width: auto !important;
+    padding: 8px !important;
+    min-width: unset !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .neynar_signin [data-variant='farcaster'] span {
     display: none !important;
   }
 
-  .neynar_signin > div > button {
-    padding: 8px !important;
-    min-width: unset !important;
+  .neynar_signin [data-variant='farcaster'] img {
+    margin: 0 !important;
   }
 
   /* Stack archive sections on mobile */
@@ -663,4 +672,18 @@
   .try-input {
     width: 240px !important;
   }
+}
+
+/* Center and align connect buttons across all sizes */
+.auth-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* Ensure consistent button heights */
+.neynar_signin [data-variant='farcaster'] {
+  height: 40px;
+  border-radius: 12px;
 }

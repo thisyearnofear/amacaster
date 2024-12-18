@@ -95,9 +95,10 @@ export default function DraggableQASection({
 
   const { isConnected } = useAccount()
 
-  // Define login and submit states
+  // Define authentication states
   const isLoggedIn = isConnected || isFarcasterConnected
   const canSubmit = isConnected && isAdmin
+  const canDragAndDrop = isLoggedIn // New permission check for drag and drop
 
   // Add connection check to submit handler
   const handleSubmit = useCallback(async () => {
@@ -152,7 +153,7 @@ export default function DraggableQASection({
   }, [])
 
   const handleDragEnd = (result: any) => {
-    if (!result.destination || !(isConnected || isFarcasterConnected)) return
+    if (!result.destination || !canDragAndDrop) return
 
     const sourceList =
       result.source.droppableId === 'questions'
@@ -179,7 +180,7 @@ export default function DraggableQASection({
     fromIndex: number,
     toIndex: number,
   ) => {
-    if (!(isConnected || isFarcasterConnected)) return
+    if (!canDragAndDrop) return
 
     if (type === 'pair') {
       // Move the entire pair
@@ -305,7 +306,7 @@ export default function DraggableQASection({
             </div>
           </div>
           <div className="answer-text text-center">{entry.text}</div>
-          {isAdmin && (
+          {canDragAndDrop && (
             <div className="admin-controls">
               <button
                 onClick={() => setQuickMoveTarget({ type: 'answer', index })}
@@ -403,7 +404,7 @@ export default function DraggableQASection({
               </div>
 
               {/* Admin Controls at Bottom - Now Centered */}
-              {isAdmin && (
+              {canDragAndDrop && (
                 <div className="admin-controls">
                   <div className="control-buttons">
                     <button
@@ -556,7 +557,7 @@ export default function DraggableQASection({
           <div key={question.hash} className="qa-pair">
             <div className="numbered-band">
               <span className="numbered-band-text">#{index + 1}</span>
-              {isAdmin && (
+              {canDragAndDrop && (
                 <button
                   onClick={() => setQuickMoveTarget({ type: 'pair', index })}
                   className="quick-move-pair-button ml-2"
@@ -588,7 +589,7 @@ export default function DraggableQASection({
                   </div>
                 </div>
                 <div className="question-text text-center">{question.text}</div>
-                {isAdmin && (
+                {canDragAndDrop && (
                   <button
                     onClick={() =>
                       setQuickMoveTarget({ type: 'question', index })
@@ -681,7 +682,7 @@ export default function DraggableQASection({
                   <Draggable
                     draggableId={cast.hash}
                     index={index}
-                    isDragDisabled={!isAdmin}
+                    isDragDisabled={!canDragAndDrop}
                   >
                     {(provided) => (
                       <div
@@ -725,7 +726,7 @@ export default function DraggableQASection({
                           <div className="cast-content text-center">
                             {cast.text}
                           </div>
-                          {isAdmin && (
+                          {canDragAndDrop && (
                             <div className="admin-controls">
                               <button
                                 onClick={() =>
@@ -798,7 +799,7 @@ export default function DraggableQASection({
                   <Draggable
                     draggableId={isAnswerStack(entry) ? entry.id : entry.hash}
                     index={index}
-                    isDragDisabled={!isAdmin}
+                    isDragDisabled={!canDragAndDrop}
                   >
                     {(provided) => (
                       <div

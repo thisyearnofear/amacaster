@@ -42,7 +42,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider modalSize="compact" initialChain={optimismSepolia}>
+        <RainbowKitProvider
+          modalSize="compact"
+          initialChain={optimismSepolia}
+          coolMode
+        >
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>

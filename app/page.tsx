@@ -128,7 +128,7 @@ export default function Home() {
     <div className="flex flex-col items-center py-12 w-full text-center">
       <h2 className="text-4xl font-bold py-6">AMACASTER</h2>
 
-      <div className="mb-8">
+      <div className="mb-8 auth-buttons-container">
         {neynarUser ? (
           <div className="text-sm text-gray-600 flex items-center gap-2">
             {neynarUser.user.pfp?.url && (
