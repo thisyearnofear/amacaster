@@ -653,6 +653,21 @@
   .try-input {
     width: 240px !important;
   }
+
+  /* Center auth buttons on mobile */
+  .auth-buttons-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    padding: 0 1rem !important;
+  }
+
+  .auth-buttons-container > div {
+    width: auto !important;
+    min-width: unset !important;
+  }
 }
 
 /* Center and align connect buttons across all sizes */
@@ -661,10 +676,68 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
+  position: relative;
+  z-index: 50;
 }
 
-/* Ensure consistent button heights */
+/* Ensure links are clickable */
+.archive-grid,
+.try-input,
+a {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  /* Mobile-specific styles */
+  .auth-buttons-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    padding: 0 1rem !important;
+  }
+
+  .auth-buttons-container > div {
+    width: auto !important;
+    min-width: unset !important;
+  }
+
+  /* Hide Farcaster button text on mobile */
+  .neynar_signin [data-variant='farcaster'] {
+    width: auto !important;
+    padding: 8px !important;
+    min-width: unset !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .neynar_signin [data-variant='farcaster'] span {
+    display: none !important;
+  }
+
+  .neynar_signin [data-variant='farcaster'] img {
+    margin: 0 !important;
+  }
+}
+
+/* Ensure consistent button heights and compact Farcaster button */
 .neynar_signin [data-variant='farcaster'] {
-  height: 40px;
-  border-radius: 12px;
+  height: 40px !important;
+  border-radius: 12px !important;
+  width: auto !important;
+  min-width: unset !important;
+  padding: 0 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+/* Remove avatar from Farcaster button */
+.neynar_signin [data-variant='farcaster'] img:not([alt='Farcaster']) {
+  display: none !important;
 }

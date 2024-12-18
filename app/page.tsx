@@ -142,11 +142,6 @@ export default function Home() {
     <div className="flex flex-col items-center py-12 w-full text-center">
       <h2 className="text-4xl font-bold py-6">AMACASTER</h2>
 
-      <div className="mb-8 auth-buttons-container flex flex-col md:flex-row items-center gap-4">
-        <ConnectButton />
-        <SignInWithNeynar onSignInSuccess={handleNeynarSignIn} />
-      </div>
-
       <h3 className="text-lg mb-2">archive</h3>
 
       <div className="flex justify-center w-full gap-8 mb-4 archive-grid">
