@@ -3,14 +3,52 @@ import {
   useWatchContractEvent,
   useSimulateContract,
 } from 'wagmi'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { keccak256, encodePacked } from 'viem'
 import { CONTRACTS } from '../config/contracts'
 import { AMA_MATCHER_ABI } from '../config/abis'
 
-export function useMatchSubmission() {
-  const { writeContract, isError, isPending, isSuccess } = useWriteContract()
+// Helper function to encode matches into a compact format
+function encodeMatches(
+  matches: { questionHash: string; answerHash: string }[],
+) {
+  // Create a mapping of all unique hashes to indices
+  const hashToIndex = new Map<string, number>()
+  let nextIndex = 0
 
+  // Collect all unique hashes
+  matches.forEach(({ questionHash, answerHash }) => {
+    if (!hashToIndex.has(questionHash)) {
+      hashToIndex.set(questionHash, nextIndex++)
+    }
+    if (!hashToIndex.has(answerHash)) {
+      hashToIndex.set(answerHash, nextIndex++)
+    }
+  })
+
+  // Create the encoded matches array
+  const encodedMatches = matches.map(({ questionHash, answerHash }) => {
+    const qIndex = hashToIndex.get(questionHash)!
+    const aIndex = hashToIndex.get(answerHash)!
+    // Pack indices into a single bytes32
+    return keccak256(
+      encodePacked(['uint256', 'uint256'], [BigInt(qIndex), BigInt(aIndex)]),
+    )
+  })
+
+  return encodedMatches
+}
+
+export function useMatchSubmission() {
+  const {
+    writeContract,
+    isPending,
+    isSuccess,
+    error: writeError,
+  } = useWriteContract()
+  const [error, setError] = useState<Error | null>(null)
+
+  // Get the simulation function
   const { data: simulateData } = useSimulateContract({
     address: CONTRACTS.AMAMatcher.address,
     abi: AMA_MATCHER_ABI,
@@ -24,28 +62,38 @@ export function useMatchSubmission() {
       rankings: number[],
     ) => {
       try {
+        setError(null)
+
         // Create AMA ID from cast hash
         const amaId = keccak256(encodePacked(['string'], [castHash]))
 
-        // Create match hashes
-        const matchHashes = matches.map(({ questionHash, answerHash }) =>
-          keccak256(
-            encodePacked(['string', 'string'], [questionHash, answerHash]),
-          ),
-        )
+        // Create encoded match hashes
+        const matchHashes = encodeMatches(matches)
 
         // Convert rankings to bigints
         const rankingsBigInt = rankings.map(BigInt)
 
         // Submit to contract
-        await writeContract({
+        const hash = await writeContract({
           address: CONTRACTS.AMAMatcher.address,
           abi: AMA_MATCHER_ABI,
           functionName: 'submitMatch',
           args: [amaId, matchHashes, rankingsBigInt],
         })
+
+        // Note: Supabase integration will be added later
+        // For now, just log the submission
+        console.log('Submitted matches:', {
+          amaId,
+          matchHashes,
+          rankings: rankingsBigInt,
+          transactionHash: hash,
+        })
+
+        return hash
       } catch (error) {
         console.error('Error submitting matches:', error)
+        setError(error instanceof Error ? error : new Error('Unknown error'))
         throw error
       }
     },
@@ -56,6 +104,6 @@ export function useMatchSubmission() {
     submitMatches,
     isLoading: isPending,
     isSuccess,
-    isError,
+    error: error || writeError,
   }
 }

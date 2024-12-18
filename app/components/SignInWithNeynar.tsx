@@ -90,16 +90,18 @@ export function SignInWithNeynar({ onSignInSuccess }: SignInWithNeynarProps) {
 
   if (user) {
     return (
-      <div className="flex items-center gap-2">
-        <img
-          src={user.user.pfp?.url}
-          alt={user.user.displayName}
-          className="w-8 h-8 rounded-full"
-        />
-        <span className="text-sm">@{user.user.username}</span>
+      <div className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <img
+            src={user.user.pfp?.url}
+            alt={user.user.displayName}
+            className="w-5 h-5 rounded-full"
+          />
+          <span>@{user.user.username}</span>
+        </div>
         <button
           onClick={handleSignOut}
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-gray-500 hover:text-gray-700 transition-colors"
         >
           Sign Out
         </button>
@@ -109,7 +111,7 @@ export function SignInWithNeynar({ onSignInSuccess }: SignInWithNeynarProps) {
 
   return (
     <div
-      className="neynar_signin"
+      className="neynar_signin inline-flex"
       data-client_id={process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID}
       data-success-callback="onSignInSuccess"
       data-theme="dark"

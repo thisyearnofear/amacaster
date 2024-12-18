@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
-import type { Cast } from '../types'
+import type { Cast, NeynarUser } from '../types'
 import SafeImage from './SafeImage'
 import { useMatchSubmission } from '../hooks/useMatchSubmission'
 import { useAccount } from 'wagmi'
@@ -63,7 +63,7 @@ interface DraggableQASectionProps {
   thirdTier: AnswerEntry[]
   isAdmin: boolean
   onOrderChange: (newSecondTier: Cast[], newThirdTier: AnswerEntry[]) => void
-  isFarcasterConnected?: boolean
+  neynarUser?: NeynarUser | null
 }
 
 export default function DraggableQASection({
@@ -71,7 +71,7 @@ export default function DraggableQASection({
   thirdTier,
   isAdmin,
   onOrderChange,
-  isFarcasterConnected = false,
+  neynarUser,
 }: DraggableQASectionProps) {
   const [localSecondTier, setLocalSecondTier] = useState<Cast[]>(secondTier)
   const [localThirdTier, setLocalThirdTier] = useState<AnswerEntry[]>(thirdTier)
@@ -91,42 +91,59 @@ export default function DraggableQASection({
     submitMatches,
     isLoading: isSubmitting,
     isSuccess: isSubmitted,
+    error: submitError,
   } = useMatchSubmission()
 
   const { isConnected } = useAccount()
 
   // Define authentication states
-  const isLoggedIn = isConnected || isFarcasterConnected
+  const isLoggedIn = isConnected || !!neynarUser
   const canSubmit = isConnected && isAdmin
-  const canDragAndDrop = isLoggedIn // New permission check for drag and drop
+  const canDragAndDrop = isLoggedIn
 
   // Add connection check to submit handler
   const handleSubmit = useCallback(async () => {
     if (!isConnected) {
-      // You might want to trigger wallet connection here
       return
     }
 
     try {
-      // Create matches array
-      const matches = secondTier.map((question, index) => ({
-        questionHash: question.hash,
-        answerHash: isAnswerStack(thirdTier[index])
-          ? thirdTier[index].answers[0].hash
-          : thirdTier[index].hash,
-      }))
+      // Create matches array - include all stacked answers
+      const matches = secondTier
+        .map((question, index) => {
+          const answer = thirdTier[index]
+          if (isAnswerStack(answer)) {
+            // For stacked answers, create a match for each answer in the stack
+            return answer.answers.map((stackedAnswer) => ({
+              questionHash: question.hash,
+              answerHash: stackedAnswer.hash,
+            }))
+          } else {
+            // For single answers, create one match
+            return [
+              {
+                questionHash: question.hash,
+                answerHash: answer.hash,
+              },
+            ]
+          }
+        })
+        .flat() // Flatten the array of arrays
 
       // Create rankings array (currently just using the order as ranking)
       const rankings = secondTier.map((_, index) => index)
 
       // Submit to blockchain
-      await submitMatches(
+      const hash = await submitMatches(
         secondTier[0].parent_hash || secondTier[0].hash,
         matches,
         rankings,
       )
+
+      console.log('Transaction hash:', hash)
     } catch (error) {
       console.error('Error submitting matches:', error)
+      // Error is handled by useMatchSubmission
     }
   }, [secondTier, thirdTier, submitMatches, isConnected])
 
@@ -182,11 +199,12 @@ export default function DraggableQASection({
   ) => {
     if (!canDragAndDrop) return
 
-    if (type === 'pair') {
-      // Move the entire pair
-      const newSecondTier = [...localSecondTier]
-      const newThirdTier = [...localThirdTier]
+    // Create copies of the arrays to modify
+    const newSecondTier = [...localSecondTier]
+    const newThirdTier = [...localThirdTier]
 
+    if (type === 'pair') {
+      // Move both question and answer together
       const [removedQuestion] = newSecondTier.splice(fromIndex, 1)
       const [removedAnswer] = newThirdTier.splice(fromIndex, 1)
 
@@ -195,23 +213,83 @@ export default function DraggableQASection({
 
       setLocalSecondTier(newSecondTier)
       setLocalThirdTier(newThirdTier)
-      onOrderChange(newSecondTier, newThirdTier)
     } else if (type === 'question') {
-      // Move individual question
-      const newList = [...localSecondTier]
-      const [removed] = newList.splice(fromIndex, 1)
-      newList.splice(toIndex, 0, removed)
-      setLocalSecondTier(newList)
-      onOrderChange(newList, localThirdTier)
+      // Move just the question
+      const [removed] = newSecondTier.splice(fromIndex, 1)
+      newSecondTier.splice(toIndex, 0, removed)
+      setLocalSecondTier(newSecondTier)
     } else {
-      // Move individual answer or stack
-      const newList = [...localThirdTier]
-      const [removed] = newList.splice(fromIndex, 1)
-      newList.splice(toIndex, 0, removed)
-      setLocalThirdTier(newList)
-      onOrderChange(localSecondTier, newList)
+      // Move just the answer
+      const [removed] = newThirdTier.splice(fromIndex, 1)
+      newThirdTier.splice(toIndex, 0, removed)
+      setLocalThirdTier(newThirdTier)
     }
+
+    // Update parent component
+    onOrderChange(newSecondTier, newThirdTier)
     setQuickMoveTarget(null)
+  }
+
+  // Function to render quick move overlay
+  const renderQuickMoveOverlay = () => {
+    if (!quickMoveTarget) return null
+
+    const maxPosition =
+      quickMoveTarget.type === 'pair'
+        ? localSecondTier.length
+        : quickMoveTarget.type === 'question'
+        ? localSecondTier.length
+        : localThirdTier.length
+
+    return (
+      <div
+        className="quick-actions-overlay"
+        onClick={() => setQuickMoveTarget(null)}
+      >
+        <div
+          className="quick-actions-content"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="quick-actions-header">
+            <h3>
+              Move{' '}
+              {quickMoveTarget.type === 'pair'
+                ? 'Pair'
+                : quickMoveTarget.type === 'question'
+                ? 'Question'
+                : 'Answer'}{' '}
+              to position
+            </h3>
+            <button
+              onClick={() => setQuickMoveTarget(null)}
+              className="close-button"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="quick-actions-grid">
+            {Array.from({ length: maxPosition }, (_, i) => (
+              <button
+                key={i}
+                className={`quick-action-button ${
+                  i === quickMoveTarget.index ? 'current' : ''
+                }`}
+                onClick={() =>
+                  handleQuickMove(
+                    quickMoveTarget.type!,
+                    quickMoveTarget.index,
+                    i,
+                  )
+                }
+                disabled={i === quickMoveTarget.index}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Slider settings
@@ -684,12 +762,14 @@ export default function DraggableQASection({
                     index={index}
                     isDragDisabled={!canDragAndDrop}
                   >
-                    {(provided) => (
+                    {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className="matching-item-container"
+                        className={`matching-item-container ${
+                          snapshot.isDragging ? 'dragging' : ''
+                        }`}
                         style={
                           {
                             ...provided.draggableProps.style,
@@ -774,7 +854,25 @@ export default function DraggableQASection({
                   } as CustomCSSProperties
                 }
               >
-                <div className="central-number-content">{i + 1}</div>
+                <div className="central-number-content flex flex-col items-center gap-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-medium">
+                    {i + 1}
+                  </div>
+                  {canDragAndDrop && (
+                    <button
+                      onClick={() =>
+                        setQuickMoveTarget({
+                          type: 'pair',
+                          index: i,
+                        })
+                      }
+                      className="quick-move-pair-button text-gray-500 hover:text-gray-700 transition-colors"
+                      title="Move this pair"
+                    >
+                      ⇅
+                    </button>
+                  )}
+                </div>
               </div>
             ),
           )}
@@ -801,12 +899,14 @@ export default function DraggableQASection({
                     index={index}
                     isDragDisabled={!canDragAndDrop}
                   >
-                    {(provided) => (
+                    {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className="matching-item-container"
+                        className={`matching-item-container ${
+                          snapshot.isDragging ? 'dragging' : ''
+                        }`}
                         style={
                           {
                             ...provided.draggableProps.style,
@@ -865,7 +965,7 @@ export default function DraggableQASection({
     return Math.max(baseHeight, calculatedHeight + extraPadding)
   }
 
-  // Enhanced submit section
+  // Enhanced submit section - remove duplicate and improve error handling
   const renderSubmitSection = () => {
     if (isAdmin && !isLoggedIn) return null
 
@@ -887,6 +987,8 @@ export default function DraggableQASection({
               <span className="text-green-600">
                 ✓ Matches submitted successfully
               </span>
+            ) : submitError ? (
+              <span className="text-red-600">Error: {submitError.message}</span>
             ) : (
               <span>Ready to submit your matches?</span>
             )}
@@ -904,6 +1006,8 @@ export default function DraggableQASection({
                 ? 'bg-indigo-100 text-indigo-400'
                 : isSubmitted
                 ? 'bg-green-100 text-green-600'
+                : submitError
+                ? 'bg-red-100 text-red-600'
                 : 'bg-indigo-600 text-white hover:bg-indigo-700'
             }`}
           >
@@ -915,6 +1019,8 @@ export default function DraggableQASection({
               ? 'Submitting...'
               : isSubmitted
               ? 'Submitted!'
+              : submitError
+              ? 'Try Again'
               : 'Submit Matches'}
           </button>
         </div>
@@ -924,27 +1030,27 @@ export default function DraggableQASection({
 
   return (
     <div className="pb-20">
-      {' '}
-      {/* Add padding to account for fixed submit section */}
       {!isMobile && (
         <div className="controls-header flex justify-center items-center gap-8 mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg">
           {/* Controls Container */}
           <div className="flex items-center gap-8">
             {/* Move Controls */}
-            <div className="flex items-center gap-4">
-              <div className="legend-item flex items-center gap-2">
-                <button className="quick-move-pair-button" disabled>
-                  ⇅
-                </button>
-                <span>pair</span>
+            {isLoggedIn && (
+              <div className="flex items-center gap-4">
+                <div className="legend-item flex items-center gap-2">
+                  <button className="quick-move-pair-button" disabled>
+                    ⇅
+                  </button>
+                  <span>pair</span>
+                </div>
+                <div className="legend-item flex items-center gap-2">
+                  <button className="quick-move-button" disabled>
+                    ⇄
+                  </button>
+                  <span>response</span>
+                </div>
               </div>
-              <div className="legend-item flex items-center gap-2">
-                <button className="quick-move-button" disabled>
-                  ⇄
-                </button>
-                <span>response</span>
-              </div>
-            </div>
+            )}
 
             {/* View and Mode Controls */}
             <div className="flex items-center gap-4">
@@ -971,72 +1077,26 @@ export default function DraggableQASection({
             </div>
 
             {/* Stack Controls */}
-            <div className="legend-item flex items-center gap-2">
-              <button className="stack-button" disabled>
-                <svg
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                  fill="currentColor"
-                >
-                  <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-                </svg>
-              </button>
-              <span>Stack responses (max 3)</span>
-            </div>
+            {isLoggedIn && (
+              <div className="legend-item flex items-center gap-2">
+                <button className="stack-button" disabled>
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                  >
+                    <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+                  </svg>
+                </button>
+                <span>Stack responses (max 3)</span>
+              </div>
+            )}
           </div>
         </div>
       )}
-      {/* Submit section */}
-      <div className="submit-section fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            {!isLoggedIn ? (
-              <span className="text-amber-600">
-                Login to play, learn & earn POAPs
-              </span>
-            ) : !isConnected ? (
-              <span className="text-amber-600">
-                Connect wallet to submit your matches
-              </span>
-            ) : isSubmitting ? (
-              <span className="text-indigo-600">Submitting to Optimism...</span>
-            ) : isSubmitted ? (
-              <span className="text-green-600">
-                ✓ Matches submitted successfully
-              </span>
-            ) : (
-              <span>Ready to submit your matches?</span>
-            )}
-          </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit || isSubmitting || isSubmitted}
-            className={`px-6 py-2 rounded-lg font-medium transition-all ${
-              !isLoggedIn
-                ? 'bg-gray-100 text-gray-400'
-                : !isConnected
-                ? 'bg-gray-100 text-gray-400'
-                : isSubmitting
-                ? 'bg-indigo-100 text-indigo-400'
-                : isSubmitted
-                ? 'bg-green-100 text-green-600'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
-            }`}
-          >
-            {!isLoggedIn
-              ? 'Login to Play'
-              : !isConnected
-              ? 'Connect Wallet'
-              : isSubmitting
-              ? 'Submitting...'
-              : isSubmitted
-              ? 'Submitted!'
-              : 'Submit Matches'}
-          </button>
-        </div>
-      </div>
+      {renderSubmitSection()}
+      {renderQuickMoveOverlay()}
       {isPairedMode ? renderPairedMode() : renderMatchingMode()}
     </div>
   )

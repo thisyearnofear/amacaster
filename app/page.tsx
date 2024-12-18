@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import IconImage from './components/IconImage'
 import { SignInWithNeynar } from './components/SignInWithNeynar'
 import { TestnetInstructions } from './components/TestnetInstructions'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -29,6 +30,19 @@ export default function Home() {
     setNeynarUser(data)
     localStorage.setItem('neynar_signer_uuid', data.signer_uuid)
   }
+
+  // Check for existing Neynar session on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('neynar_user')
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser)
+        setNeynarUser(userData)
+      } catch (error) {
+        console.error('Error parsing stored user data:', error)
+      }
+    }
+  }, [])
 
   const hostLinks = [
     {
@@ -128,26 +142,9 @@ export default function Home() {
     <div className="flex flex-col items-center py-12 w-full text-center">
       <h2 className="text-4xl font-bold py-6">AMACASTER</h2>
 
-      <div className="mb-8 auth-buttons-container">
-        {neynarUser ? (
-          <div className="text-sm text-gray-600 flex items-center gap-2">
-            {neynarUser.user.pfp?.url && (
-              <img
-                src={neynarUser.user.pfp.url}
-                alt={neynarUser.user.username}
-                className="w-6 h-6 rounded-full"
-              />
-            )}
-            <span>
-              Connected as{' '}
-              {neynarUser.user.displayName ||
-                `@${neynarUser.user.username}` ||
-                `FID: ${neynarUser.fid}`}
-            </span>
-          </div>
-        ) : (
-          <SignInWithNeynar onSignInSuccess={handleNeynarSignIn} />
-        )}
+      <div className="mb-8 auth-buttons-container flex flex-col md:flex-row items-center gap-4">
+        <ConnectButton />
+        <SignInWithNeynar onSignInSuccess={handleNeynarSignIn} />
       </div>
 
       <h3 className="text-lg mb-2">archive</h3>

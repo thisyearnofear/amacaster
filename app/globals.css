@@ -256,35 +256,16 @@
 }
 
 .central-number {
-  @apply flex items-center justify-center relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: var(--pair-height);
-  width: 100%;
-  transition: height 0.3s ease;
-}
-
-.central-number-content {
-  @apply text-lg font-bold text-purple-700 bg-purple-100 rounded-full 
-    flex items-center justify-center z-10 border-2 border-purple-600;
-  width: 32px;
-  height: 32px;
   position: relative;
 }
 
-.central-number::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    #e5e7eb 20%,
-    #e5e7eb 80%,
-    transparent 100%
-  );
-  opacity: 0.5;
+.central-number-content {
+  position: relative;
+  z-index: 1;
 }
 
 /* Message bubble adjustments for matching mode */

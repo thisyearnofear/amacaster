@@ -1,19 +1,16 @@
 'use client'
 
-import { WalletConnect } from './WalletConnect'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { SignInWithNeynar } from './SignInWithNeynar'
 
 export function AuthContainer() {
   return (
-    <div className="auth-container">
-      <div className="flex items-center gap-6 flex-wrap justify-end">
-        <div className="flex-grow md:flex-grow-0">
-          <SignInWithNeynar />
-        </div>
-        <div className="auth-divider hidden md:block" />
-        <div className="flex-shrink-0">
-          <WalletConnect />
-        </div>
+    <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+      <div className="w-full md:w-auto">
+        <ConnectButton />
+      </div>
+      <div className="w-full md:w-auto">
+        <SignInWithNeynar />
       </div>
     </div>
   )
