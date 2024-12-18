@@ -65,8 +65,8 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
   const [guestUser, setGuestUser] = useState<Author | null>(null)
   const { neynarUser, isConnected } = useNeynarUser()
 
-  // Update admin state based on user connection
-  const isAdmin = isConnected && neynarUser?.fid === amaUser?.fid
+  // Update admin state based on user connection - during testing phase, any logged-in user can submit
+  const isAdmin = isConnected || !!neynarUser
 
   useEffect(() => {
     async function fetchData() {

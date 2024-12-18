@@ -100,20 +100,46 @@ export default function DraggableQASection({
 
   // Define authentication states
   const isLoggedIn = isConnected || !!neynarUser
-  const canSubmit = isConnected && isAdmin
+  const canSubmit = isLoggedIn // During testing phase, any logged-in user can submit
   const canDragAndDrop = isLoggedIn
 
   // Add connection check to submit handler
   const handleSubmit = useCallback(async () => {
+    console.log('Submit button clicked')
+    console.log('Connection status:', isConnected)
+    console.log('Network status:', isCorrectNetwork)
+    console.log('Can submit:', canSubmit)
+
     if (!isConnected) {
+      console.log('Not connected')
+      return
+    }
+
+    if (!isCorrectNetwork) {
+      console.log('Wrong network')
+      return
+    }
+
+    if (!canSubmit) {
+      console.log('Cannot submit - not authorized')
       return
     }
 
     try {
-      // Create matches array - include all stacked answers
-      const matches = secondTier
+      console.log('Preparing submission data...')
+      // Validate that we have matching pairs
+      if (localSecondTier.length === 0 || localThirdTier.length === 0) {
+        throw new Error('No matches to submit')
+      }
+
+      // Filter out unmatched questions and answers
+      const matches = localSecondTier
         .map((question, index) => {
-          const answer = thirdTier[index]
+          const answer = localThirdTier[index]
+          if (!answer) {
+            return []
+          }
+
           if (isAnswerStack(answer)) {
             // For stacked answers, create a match for each answer in the stack
             return answer.answers.map((stackedAnswer) => ({
@@ -130,24 +156,39 @@ export default function DraggableQASection({
             ]
           }
         })
-        .flat() // Flatten the array of arrays
+        .flat()
+        .filter((match) => match.questionHash && match.answerHash) // Ensure only valid matches are included
+
+      if (matches.length === 0) {
+        throw new Error('No valid matches to submit')
+      }
+
+      console.log('Final matches array:', matches)
 
       // Create rankings array (currently just using the order as ranking)
-      const rankings = secondTier.map((_, index) => index)
+      const rankings = localSecondTier.map((_, index) => index)
+      console.log('Rankings array:', rankings)
 
       // Submit to blockchain
+      console.log('Submitting to blockchain...')
       const hash = await submitMatches(
-        secondTier[0].parent_hash || secondTier[0].hash,
+        localSecondTier[0].parent_hash || localSecondTier[0].hash,
         matches,
         rankings,
       )
 
       console.log('Transaction hash:', hash)
     } catch (error) {
-      console.error('Error submitting matches:', error)
-      // Error is handled by useMatchSubmission
+      console.error('Error in handleSubmit:', error)
     }
-  }, [secondTier, thirdTier, submitMatches, isConnected])
+  }, [
+    localSecondTier,
+    localThirdTier,
+    submitMatches,
+    isConnected,
+    isCorrectNetwork,
+    canSubmit,
+  ])
 
   // Function to handle answer navigation
   const handleAnswerNavigation = (stackId: string, index: number) => {
@@ -636,7 +677,15 @@ export default function DraggableQASection({
         return (
           <div key={question.hash} className="qa-pair">
             <div className="numbered-band">
-              <span className="numbered-band-text">#{index + 1}</span>
+              <div
+                className={`numbered-band-text flex items-center justify-center w-8 h-8 rounded-full font-medium ${
+                  index < 20
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                {index + 1}
+              </div>
               {canDragAndDrop && (
                 <button
                   onClick={() => setQuickMoveTarget({ type: 'pair', index })}
@@ -857,7 +906,13 @@ export default function DraggableQASection({
                 }
               >
                 <div className="central-number-content flex flex-col items-center gap-2">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-medium">
+                  <div
+                    className={`flex items-center justify-center w-8 h-8 rounded-full font-medium ${
+                      i < 20
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
                     {i + 1}
                   </div>
                   {canDragAndDrop && (
@@ -971,14 +1026,23 @@ export default function DraggableQASection({
   const renderSubmitSection = () => {
     if (isAdmin && !isLoggedIn) return null
 
+    // Add debug logs
+    console.log('Submit button state:', {
+      isLoggedIn,
+      isConnected,
+      isAdmin,
+      canSubmit,
+      isCorrectNetwork,
+      isSubmitting,
+      isSubmitted,
+    })
+
     return (
       <div className="submit-section fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="text-sm text-gray-600">
             {!isLoggedIn ? (
-              <span className="text-amber-600">
-                Login to play, learn & earn POAPs
-              </span>
+              <span className="text-amber-600">Mix, Match & Rank AMAs</span>
             ) : !isConnected ? (
               <span className="text-amber-600">
                 Connect wallet to submit your matches
@@ -1001,7 +1065,10 @@ export default function DraggableQASection({
           </div>
 
           <button
-            onClick={handleSubmit}
+            onClick={() => {
+              console.log('Submit button clicked')
+              handleSubmit()
+            }}
             disabled={
               !canSubmit || !isCorrectNetwork || isSubmitting || isSubmitted
             }

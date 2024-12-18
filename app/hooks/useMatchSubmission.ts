@@ -8,6 +8,7 @@ import { keccak256, encodePacked } from 'viem'
 function encodeMatches(
   matches: { questionHash: string; answerHash: string }[],
 ) {
+  console.log('Encoding matches:', matches)
   // Create a mapping of all unique hashes to indices
   const hashToIndex = new Map<string, number>()
   let nextIndex = 0
@@ -22,6 +23,8 @@ function encodeMatches(
     }
   })
 
+  console.log('Hash to index mapping:', Object.fromEntries(hashToIndex))
+
   // Create the encoded matches array
   const encodedMatches = matches.map(({ questionHash, answerHash }) => {
     const qIndex = hashToIndex.get(questionHash)!
@@ -32,6 +35,7 @@ function encodeMatches(
     )
   })
 
+  console.log('Encoded matches:', encodedMatches)
   return encodedMatches
 }
 
@@ -47,6 +51,12 @@ export function useMatchSubmission() {
 
   // Check if we're on the correct network
   const isCorrectNetwork = chainId === CONTRACTS.AMAMatcher.chainId
+  console.log('Contract config:', {
+    address: CONTRACTS.AMAMatcher.address,
+    chainId: CONTRACTS.AMAMatcher.chainId,
+    currentChainId: chainId,
+    isCorrectNetwork,
+  })
 
   const submitMatches = useCallback(
     async (
@@ -55,6 +65,15 @@ export function useMatchSubmission() {
       rankings: number[],
     ) => {
       try {
+        console.log('Starting match submission...')
+        console.log('Cast hash:', castHash)
+        console.log('Matches:', matches)
+        console.log('Rankings:', rankings)
+
+        if (!CONTRACTS.AMAMatcher.address) {
+          throw new Error('Contract address not configured')
+        }
+
         setError(null)
         resetWrite()
 
@@ -62,16 +81,29 @@ export function useMatchSubmission() {
           throw new Error('Please switch to Optimism Sepolia network')
         }
 
+        if (!matches.length) {
+          throw new Error('No matches to submit')
+        }
+
         // Create AMA ID from cast hash
         const amaId = keccak256(encodePacked(['string'], [castHash]))
+        console.log('Generated AMA ID:', amaId)
 
         // Create encoded match hashes
         const matchHashes = encodeMatches(matches)
+        console.log('Encoded match hashes:', matchHashes)
 
         // Convert rankings to bigints
         const rankingsBigInt = rankings.map(BigInt)
+        console.log('Rankings as BigInt:', rankingsBigInt)
 
         // Submit to contract
+        console.log('Submitting to contract:', {
+          address: CONTRACTS.AMAMatcher.address,
+          functionName: 'submitMatch',
+          args: [amaId, matchHashes, rankingsBigInt],
+        })
+
         const hash = await writeContract({
           address: CONTRACTS.AMAMatcher.address,
           abi: AMA_MATCHER_ABI,
@@ -82,7 +114,7 @@ export function useMatchSubmission() {
         console.log('Transaction submitted:', hash)
         return hash
       } catch (error) {
-        console.error('Error submitting matches:', error)
+        console.error('Error in submitMatches:', error)
         setError(error instanceof Error ? error : new Error('Unknown error'))
         throw error
       }
