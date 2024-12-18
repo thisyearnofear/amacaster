@@ -1,12 +1,8 @@
-import {
-  useWriteContract,
-  useWatchContractEvent,
-  useSimulateContract,
-} from 'wagmi'
 import { useCallback, useState } from 'react'
-import { keccak256, encodePacked } from 'viem'
+import { useWriteContract, useChainId } from 'wagmi'
 import { CONTRACTS } from '../config/contracts'
 import { AMA_MATCHER_ABI } from '../config/abis'
+import { keccak256, encodePacked } from 'viem'
 
 // Helper function to encode matches into a compact format
 function encodeMatches(
@@ -40,20 +36,17 @@ function encodeMatches(
 }
 
 export function useMatchSubmission() {
+  const [error, setError] = useState<Error | null>(null)
+  const chainId = useChainId()
   const {
     writeContract,
     isPending,
     isSuccess,
-    error: writeError,
+    reset: resetWrite,
   } = useWriteContract()
-  const [error, setError] = useState<Error | null>(null)
 
-  // Get the simulation function
-  const { data: simulateData } = useSimulateContract({
-    address: CONTRACTS.AMAMatcher.address,
-    abi: AMA_MATCHER_ABI,
-    functionName: 'submitMatch',
-  })
+  // Check if we're on the correct network
+  const isCorrectNetwork = chainId === CONTRACTS.AMAMatcher.chainId
 
   const submitMatches = useCallback(
     async (
@@ -63,6 +56,11 @@ export function useMatchSubmission() {
     ) => {
       try {
         setError(null)
+        resetWrite()
+
+        if (!isCorrectNetwork) {
+          throw new Error('Please switch to Optimism Sepolia network')
+        }
 
         // Create AMA ID from cast hash
         const amaId = keccak256(encodePacked(['string'], [castHash]))
@@ -81,15 +79,7 @@ export function useMatchSubmission() {
           args: [amaId, matchHashes, rankingsBigInt],
         })
 
-        // Note: Supabase integration will be added later
-        // For now, just log the submission
-        console.log('Submitted matches:', {
-          amaId,
-          matchHashes,
-          rankings: rankingsBigInt,
-          transactionHash: hash,
-        })
-
+        console.log('Transaction submitted:', hash)
         return hash
       } catch (error) {
         console.error('Error submitting matches:', error)
@@ -97,13 +87,14 @@ export function useMatchSubmission() {
         throw error
       }
     },
-    [writeContract],
+    [isCorrectNetwork, writeContract, resetWrite],
   )
 
   return {
     submitMatches,
+    isCorrectNetwork,
     isLoading: isPending,
     isSuccess,
-    error: error || writeError,
+    error,
   }
 }

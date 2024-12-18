@@ -93,6 +93,7 @@ export default function DraggableQASection({
     isLoading: isSubmitting,
     isSuccess: isSubmitted,
     error: submitError,
+    isCorrectNetwork,
   } = useMatchSubmission()
 
   const { isConnected } = useAccount()
@@ -982,6 +983,10 @@ export default function DraggableQASection({
               <span className="text-amber-600">
                 Connect wallet to submit your matches
               </span>
+            ) : !isCorrectNetwork ? (
+              <span className="text-amber-600">
+                Please switch to Optimism Sepolia network
+              </span>
             ) : isSubmitting ? (
               <span className="text-indigo-600">Submitting to Optimism...</span>
             ) : isSubmitted ? (
@@ -997,12 +1002,16 @@ export default function DraggableQASection({
 
           <button
             onClick={handleSubmit}
-            disabled={!canSubmit || isSubmitting || isSubmitted}
+            disabled={
+              !canSubmit || !isCorrectNetwork || isSubmitting || isSubmitted
+            }
             className={`px-6 py-2 rounded-lg font-medium transition-all ${
               !isLoggedIn
                 ? 'bg-gray-100 text-gray-400'
                 : !isConnected
                 ? 'bg-gray-100 text-gray-400'
+                : !isCorrectNetwork
+                ? 'bg-amber-100 text-amber-600'
                 : isSubmitting
                 ? 'bg-indigo-100 text-indigo-400'
                 : isSubmitted
@@ -1016,6 +1025,8 @@ export default function DraggableQASection({
               ? 'Login to Play'
               : !isConnected
               ? 'Connect Wallet'
+              : !isCorrectNetwork
+              ? 'Switch Network'
               : isSubmitting
               ? 'Submitting...'
               : isSubmitted
@@ -1061,10 +1072,13 @@ export default function DraggableQASection({
                 rel="noopener noreferrer"
                 className="px-4 py-2 text-sm bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
-                <img
+                <Image
                   src="https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/farcaster.svg"
                   alt="Farcaster"
+                  width={16}
+                  height={16}
                   className="w-4 h-4"
+                  unoptimized
                 />
                 View AMA
               </a>

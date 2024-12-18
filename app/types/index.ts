@@ -98,3 +98,11 @@ export interface MatchSubmission {
   usefulnessScore: number
   ranking: number
 }
+
+export interface QAItemProps {
+  question: Cast
+  answer?: Cast
+  thirdTierResponses?: Cast[]
+  amaUser: Author
+  userAvatar: string
+}
