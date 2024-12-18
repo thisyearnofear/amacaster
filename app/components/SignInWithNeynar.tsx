@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 
 interface SignInWithNeynarProps {
   onSignInSuccess?: (data: {
@@ -92,10 +93,13 @@ export function SignInWithNeynar({ onSignInSuccess }: SignInWithNeynarProps) {
     return (
       <div className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <img
-            src={user.user.pfp?.url}
+          <Image
+            src={user.user.pfp?.url || '/default-avatar.png'}
             alt={user.user.displayName}
-            className="w-5 h-5 rounded-full"
+            width={24}
+            height={24}
+            className="rounded-full"
+            unoptimized={(user.user.pfp?.url || '').startsWith('data:')}
           />
           <span>@{user.user.username}</span>
         </div>

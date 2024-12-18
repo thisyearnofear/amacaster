@@ -5,9 +5,11 @@ import { getNeynarClient } from '../../lib/neynarClient'
 import DraggableQASection, {
   isAnswerStack,
 } from '../components/DraggableQASection'
-import type { Cast, Author, NeynarCast } from '../types'
+import type { Cast, Author } from '../types'
+import type { Cast as NeynarCast } from '../../lib/neynarClient'
 import type { AnswerEntry, AnswerStack } from '../components/DraggableQASection'
 import Image from 'next/image'
+import { useNeynarUser } from '../hooks/useNeynarUser'
 
 const DEFAULT_AVATAR = '/default-avatar.png'
 
@@ -38,11 +40,14 @@ const transformNeynarAuthor = (neynarAuthor: any): Author => {
 
 const transformNeynarCast = (neynarCast: NeynarCast): Cast => ({
   hash: neynarCast.hash,
+  thread_hash: neynarCast.thread_hash,
   parent_hash: neynarCast.parent_hash,
   author: transformNeynarAuthor(neynarCast.author),
   text: neynarCast.text,
   timestamp: neynarCast.timestamp,
   reactions: neynarCast.reactions,
+  replies: neynarCast.replies,
+  mentioned_profiles: neynarCast.mentioned_profiles?.map(transformNeynarAuthor),
 })
 
 interface AMAPageProps {
@@ -58,45 +63,10 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
   const [amaUser, setAmaUser] = useState<Author | null>(null)
   const [hostUser, setHostUser] = useState<Author | null>(null)
   const [guestUser, setGuestUser] = useState<Author | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [isFarcasterConnected, setIsFarcasterConnected] = useState(false)
+  const { neynarUser, isConnected } = useNeynarUser()
 
-  // Update admin state based on authentication
-  useEffect(() => {
-    const checkAuth = () => {
-      const neynarSignerUUID = localStorage.getItem('neynar_signer_uuid')
-      const neynarUserData = localStorage.getItem('neynar_user_data')
-      const isConnected = !!neynarSignerUUID && !!neynarUserData
-      setIsFarcasterConnected(isConnected)
-      setIsAdmin(isConnected)
-    }
-
-    // Check initially
-    checkAuth()
-
-    // Set up event listeners for storage changes
-    window.addEventListener('storage', checkAuth)
-    return () => window.removeEventListener('storage', checkAuth)
-  }, [])
-
-  // Add event listener for Farcaster auth changes
-  useEffect(() => {
-    const handleFarcasterAuth = (event: StorageEvent) => {
-      if (
-        event.key === 'neynar_signer_uuid' ||
-        event.key === 'neynar_user_data'
-      ) {
-        const neynarSignerUUID = localStorage.getItem('neynar_signer_uuid')
-        const neynarUserData = localStorage.getItem('neynar_user_data')
-        const isConnected = !!neynarSignerUUID && !!neynarUserData
-        setIsFarcasterConnected(isConnected)
-        setIsAdmin(isConnected)
-      }
-    }
-
-    window.addEventListener('storage', handleFarcasterAuth)
-    return () => window.removeEventListener('storage', handleFarcasterAuth)
-  }, [])
+  // Update admin state based on user connection
+  const isAdmin = isConnected && neynarUser?.fid === amaUser?.fid
 
   useEffect(() => {
     async function fetchData() {
@@ -310,7 +280,7 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
         secondTier={secondTier}
         thirdTier={thirdTier}
         isAdmin={isAdmin}
-        isFarcasterConnected={isFarcasterConnected}
+        neynarUser={neynarUser}
         onOrderChange={async (newSecondTier, newThirdTier) => {
           if (!isAdmin) return
 
@@ -324,10 +294,8 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
                 castHash: mainCast.hash,
                 order: {
                   secondTier: newSecondTier.map((cast) => cast.hash),
-                  thirdTier: newThirdTier.map((entry: AnswerEntry) =>
-                    isAnswerStack(entry)
-                      ? entry.answers[0].hash
-                      : (entry as Cast).hash,
+                  thirdTier: newThirdTier.map((entry) =>
+                    isAnswerStack(entry) ? entry.answers[0].hash : entry.hash,
                   ),
                 },
               }),

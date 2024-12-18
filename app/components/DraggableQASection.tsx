@@ -6,6 +6,7 @@ import type { Cast, NeynarUser } from '../types'
 import SafeImage from './SafeImage'
 import { useMatchSubmission } from '../hooks/useMatchSubmission'
 import { useAccount } from 'wagmi'
+import Image from 'next/image'
 
 // Import styles in a way that works with Next.js
 import 'slick-carousel/slick/slick.css'
