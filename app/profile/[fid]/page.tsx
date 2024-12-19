@@ -232,50 +232,51 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex items-center gap-6">
-            <div className="relative w-24 h-24">
+        {/* Profile Header with Hero Banner */}
+        <div className="bg-gradient-to-br from-purple-600 to-pink-500 rounded-t-lg h-32 relative mb-16">
+          {web3BioProfile.header && (
+            <Image
+              src={web3BioProfile.header}
+              alt="Profile banner"
+              fill
+              className="object-cover rounded-t-lg opacity-50"
+            />
+          )}
+          <div className="absolute -bottom-12 left-6 w-24 h-24">
+            <div className="relative w-full h-full">
               <Image
                 src={web3BioProfile.avatar || '/default-avatar.png'}
                 alt={`Profile picture of ${
                   web3BioProfile.displayName || web3BioProfile.identity
                 }`}
                 fill
-                className="rounded-full object-cover"
+                className="rounded-full object-cover border-4 border-white shadow-lg"
               />
             </div>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold">
-                {web3BioProfile.displayName}
-              </h1>
-              <p className="text-gray-600">@{web3BioProfile.identity}</p>
-              {web3BioProfile.description && (
-                <p className="mt-2 text-gray-700 whitespace-pre-wrap">
-                  {web3BioProfile.description}
-                </p>
-              )}
-              {web3BioProfile.location && (
-                <p className="mt-1 text-gray-600">
-                  📍 {web3BioProfile.location}
-                </p>
-              )}
-            </div>
-            {neynarUser?.fid === parseInt(params.fid) && !contractProfile && (
-              <button
-                onClick={handleCreateProfile}
-                disabled={creating}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-              >
-                {creating ? 'Creating...' : 'Create Profile'}
-              </button>
+          </div>
+        </div>
+
+        {/* Profile Info Card */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="ml-32">
+            {' '}
+            {/* Offset to account for the avatar */}
+            <h1 className="text-2xl font-bold">{web3BioProfile.displayName}</h1>
+            <p className="text-gray-600">@{web3BioProfile.identity}</p>
+            {web3BioProfile.description && (
+              <p className="mt-2 text-gray-700 whitespace-pre-wrap">
+                {web3BioProfile.description}
+              </p>
+            )}
+            {web3BioProfile.location && (
+              <p className="mt-1 text-gray-600">📍 {web3BioProfile.location}</p>
             )}
           </div>
 
           {/* Social Stats and Links */}
           <div className="mt-6 flex flex-col gap-4">
             {web3BioProfile.social && (
-              <div className="flex gap-6">
+              <div className="flex gap-8">
                 <div className="text-center">
                   <div className="text-xl font-bold">
                     {web3BioProfile.social.follower?.toLocaleString() || 0}
@@ -288,6 +289,22 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   </div>
                   <div className="text-gray-600">Following</div>
                 </div>
+                {contractProfile && (
+                  <>
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-purple-600">
+                        {contractProfile.matchesSubmitted}
+                      </div>
+                      <div className="text-gray-600">Matches</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-purple-600">
+                        {contractProfile.totalScore}
+                      </div>
+                      <div className="text-gray-600">Score</div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -319,206 +336,203 @@ export default function ProfilePage({ params }: ProfilePageProps) {
           </div>
         </div>
 
-        {/* On-chain Activity / Achievements Section */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">AMAcaster Activity</h2>
-            {neynarUser?.fid === parseInt(params.fid) && !contractProfile && (
-              <button
-                onClick={handleCreateProfile}
-                disabled={creating}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-              >
-                {creating ? 'Creating...' : '🎯 Start Your Journey'}
-              </button>
-            )}
-          </div>
-
-          {contractProfileLoading ? (
-            <div className="text-center py-4">Loading activity data...</div>
-          ) : contractProfileError ? (
-            <div className="text-center text-red-500 py-4">
-              Error loading activity data
-            </div>
-          ) : !contractProfile ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 text-center">
-                <div className="text-4xl mb-2">🎭</div>
-                <h3 className="font-semibold mb-2">Match & Rank</h3>
-                <p className="text-sm text-gray-600">
-                  Compare and rank AMAs to earn points and achievements
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 text-center">
-                <div className="text-4xl mb-2">🏆</div>
-                <h3 className="font-semibold mb-2">Earn Achievements</h3>
-                <p className="text-sm text-gray-600">
-                  Unlock special badges and rewards as you participate
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 text-center">
-                <div className="text-4xl mb-2">🎨</div>
-                <h3 className="font-semibold mb-2">Collect NFTs</h3>
-                <p className="text-sm text-gray-600">
-                  Mint unique NFTs based on your contributions
-                </p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {contractProfile.matchesSubmitted}
-                  </div>
-                  <div className="text-gray-600">Matches Submitted</div>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {contractProfile.totalScore}
-                  </div>
-                  <div className="text-gray-600">Total Score</div>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {countAchievements(contractProfile.achievementFlags)}
-                  </div>
-                  <div className="text-gray-600">Achievements</div>
-                </div>
-              </div>
-
-              {/* Achievements List */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3">Achievements</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Achievement
-                    title="First Match"
-                    description="Submit your first match"
-                    unlocked={Boolean(contractProfile.achievementFlags & 1)}
-                  />
-                  <Achievement
-                    title="Match Master"
-                    description="Submit 10 matches"
-                    unlocked={Boolean(contractProfile.achievementFlags & 2)}
-                  />
-                  <Achievement
-                    title="High Scorer"
-                    description="Reach a total score of 100"
-                    unlocked={Boolean(contractProfile.achievementFlags & 4)}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Recent Activity Feed */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Recent Rankings */}
+        {/* Achievements and Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {/* AMA Stats */}
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <span className="mr-2">🎭</span> Recent Rankings
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">AMA Stats</h2>
+              <span className="text-3xl">📊</span>
+            </div>
             {!contractProfile ? (
-              <div className="text-center py-8 px-4">
-                <p className="text-gray-500 mb-4">
-                  Start ranking AMAs to see your activity here!
-                </p>
-                <Link
-                  href="/ama"
-                  className="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+              <div className="text-center py-4">
+                <p className="text-gray-500 mb-4">Start your AMA journey!</p>
+                <button
+                  onClick={handleCreateProfile}
+                  disabled={creating}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
                 >
-                  <span className="mr-2">🎯</span>
-                  Explore AMAs
-                </Link>
+                  {creating ? 'Creating...' : '🎯 Get Started'}
+                </button>
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Placeholder for future rankings */}
-                <div className="border border-purple-100 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium">AMA Comparison</h4>
-                      <p className="text-sm text-gray-600">Ranked 2 AMAs</p>
-                    </div>
-                    <span className="text-purple-600">+10 pts</span>
-                  </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Matches</span>
+                  <span className="font-bold">
+                    {contractProfile.matchesSubmitted}
+                  </span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Score</span>
+                  <span className="font-bold">
+                    {contractProfile.totalScore}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Rank</span>
+                  <span className="font-bold text-purple-600">Coming Soon</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Achievements */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Achievements</h2>
+              <span className="text-3xl">🏆</span>
+            </div>
+            {!contractProfile ? (
+              <div className="text-center py-4">
+                <p className="text-gray-500">
+                  Unlock achievements by participating!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Achievement
+                  title="First Match"
+                  description="Submit your first match"
+                  unlocked={Boolean(contractProfile.achievementFlags & 1)}
+                />
+                <Achievement
+                  title="Match Master"
+                  description="Submit 10 matches"
+                  unlocked={Boolean(contractProfile.achievementFlags & 2)}
+                />
+                <Achievement
+                  title="High Scorer"
+                  description="Reach a total score of 100"
+                  unlocked={Boolean(contractProfile.achievementFlags & 4)}
+                />
               </div>
             )}
           </div>
 
           {/* NFT Collection */}
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <span className="mr-2">🎨</span> NFT Collection
-            </h2>
-            {!contractProfile ? (
-              <div className="text-center py-8 px-4">
-                <p className="text-gray-500 mb-4">
-                  Earn NFTs by participating in the platform!
-                </p>
-                <div className="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-700 rounded-lg">
-                  <span className="mr-2">🎨</span>
-                  Coming Soon
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">NFT Collection</h2>
+              <span className="text-3xl">🎨</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg flex items-center justify-center group cursor-pointer hover:shadow-md transition-all">
+                <div className="text-center">
+                  <span className="text-2xl group-hover:scale-110 transition-transform inline-block">
+                    🔒
+                  </span>
+                  <p className="text-xs text-gray-600 mt-1">Coming Soon</p>
                 </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                {/* Placeholder for future NFTs */}
-                <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">🔒</span>
-                </div>
-                <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">🔒</span>
+              <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg flex items-center justify-center group cursor-pointer hover:shadow-md transition-all">
+                <div className="text-center">
+                  <span className="text-2xl group-hover:scale-110 transition-transform inline-block">
+                    🔒
+                  </span>
+                  <p className="text-xs text-gray-600 mt-1">Coming Soon</p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Trending AMAs Section */}
+        {/* Recent Activity */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold">Recent Activity</h2>
+            <Link
+              href="/ama"
+              className="text-purple-600 hover:text-purple-700 transition-colors text-sm"
+            >
+              View All AMAs →
+            </Link>
+          </div>
+
+          {!contractProfile ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">
+                Start participating to see your activity!
+              </p>
+              <Link
+                href="/ama"
+                className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <span className="mr-2">🎯</span>
+                Explore AMAs
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="border border-purple-100 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">Recent Match</h4>
+                    <p className="text-sm text-gray-600">Compared 2 AMAs</p>
+                  </div>
+                  <span className="text-purple-600">+10 pts</span>
+                </div>
+              </div>
+              <div className="border border-purple-100 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">Achievement Unlocked</h4>
+                    <p className="text-sm text-gray-600">
+                      First Match Completed
+                    </p>
+                  </div>
+                  <span className="text-purple-600">🏆</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Featured AMAs Section */}
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-4 flex items-center">
-            <span className="mr-2">🔥</span> Trending AMAs to Rank
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold">Featured AMAs</h2>
+            <Link
+              href="/ama"
+              className="text-purple-600 hover:text-purple-700 transition-colors text-sm"
+            >
+              View All →
+            </Link>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Placeholder AMA cards */}
-            {[1, 2, 3, 4].map((i) => (
-              <div
+            {[
+              {
+                title: 'Vitalik Buterin',
+                category: 'Ethereum',
+                icon: '⟠',
+              },
+              {
+                title: 'Brian Armstrong',
+                category: 'Crypto',
+                icon: '₿',
+              },
+            ].map((ama, i) => (
+              <Link
                 key={i}
-                className="border border-purple-100 rounded-lg p-4 hover:border-purple-300 transition-colors cursor-pointer"
+                href="/ama"
+                className="block border border-purple-100 rounded-lg p-4 hover:border-purple-300 transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
-                    <span className="text-xl">👤</span>
+                  <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center text-xl">
+                    {ama.icon}
                   </div>
                   <div>
-                    <h4 className="font-medium">Featured AMA #{i}</h4>
+                    <h4 className="font-medium">{ama.title}</h4>
                     <p className="text-sm text-gray-600">
                       Compare and rank this AMA
                     </p>
-                    <div className="mt-2 flex gap-2">
-                      <span className="inline-block px-2 py-1 bg-purple-50 rounded text-xs text-purple-700">
-                        DeFi
-                      </span>
-                      <span className="inline-block px-2 py-1 bg-purple-50 rounded text-xs text-purple-700">
-                        NFTs
-                      </span>
-                    </div>
+                    <span className="inline-block mt-2 px-2 py-1 bg-purple-50 rounded text-xs text-purple-700">
+                      {ama.category}
+                    </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
-          </div>
-          <div className="text-center mt-6">
-            <Link
-              href="/ama"
-              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <span className="mr-2">🎯</span>
-              Explore All AMAs
-            </Link>
           </div>
         </div>
       </div>

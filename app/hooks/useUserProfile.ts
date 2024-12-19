@@ -8,6 +8,7 @@ import {
 import { useNeynarUser } from './useNeynarUser'
 import { type Hash } from 'viem'
 import { type OnChainProfile, type UserProfile } from '../types'
+import { cache } from '../utils/cache'
 
 const CONTRACT_ADDRESS = process.env
   .NEXT_PUBLIC_PROFILE_CONTRACT_ADDRESS as `0x${string}`
@@ -115,7 +116,7 @@ export function useUserProfile(): UseUserProfileReturn {
     hash: updateTxHash,
   })
 
-  // Effect to set profile data
+  // Effect to set profile data with caching
   useEffect(() => {
     if (profileData) {
       const data = profileData as unknown as {
@@ -127,17 +128,34 @@ export function useUserProfile(): UseUserProfileReturn {
         lastUpdated: bigint
       }
 
-      setProfile({
+      const profileObj = {
         fid: data.fid,
         walletAddress: data.walletAddress,
         matchesSubmitted: data.matchesSubmitted,
         totalScore: data.totalScore,
         achievementFlags: data.achievementFlags,
         lastUpdated: data.lastUpdated,
-      })
+      }
+
+      // Cache the profile data with the address as key
+      if (address) {
+        cache.set(`user-profile-${address.toLowerCase()}`, profileObj)
+      }
+
+      setProfile(profileObj)
       setLoading(false)
+    } else if (address) {
+      // Try to get from cache if no profile data
+      const cached = cache.get<OnChainProfile>(
+        `user-profile-${address.toLowerCase()}`,
+        5 * 60 * 1000, // 5 minutes TTL
+      )
+      if (cached) {
+        setProfile(cached)
+        setLoading(false)
+      }
     }
-  }, [profileData])
+  }, [profileData, address])
 
   // Effect to handle read errors
   useEffect(() => {
@@ -160,6 +178,12 @@ export function useUserProfile(): UseUserProfileReturn {
         functionName: 'createProfile',
         args: [BigInt(neynarUser.fid)],
       })
+
+      // Clear the cache when creating a new profile
+      if (address) {
+        cache.remove(`user-profile-${address.toLowerCase()}`)
+      }
+
       return hash
     } catch (err) {
       console.error('Error creating profile:', err)
@@ -179,6 +203,12 @@ export function useUserProfile(): UseUserProfileReturn {
         functionName: 'updateProfile',
         args: [BigInt(matchesSubmitted), BigInt(score)],
       })
+
+      // Clear the cache when updating the profile
+      if (address) {
+        cache.remove(`user-profile-${address.toLowerCase()}`)
+      }
+
       return hash
     } catch (err) {
       console.error('Error updating profile:', err)

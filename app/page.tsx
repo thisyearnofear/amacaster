@@ -4,14 +4,11 @@ import Link from 'next/link'
 import { useState } from 'react'
 import IconImage from './components/IconImage'
 import { TestnetInstructions } from './components/TestnetInstructions'
-import { ProfilesSection } from './components/ProfilesSection'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export default function Home() {
-  const [warpcastURL, setWarpcastURL] = useState('')
-
   const hostLinks = [
     {
       icon: 'ethereum.svg',
@@ -108,179 +105,166 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center py-12 w-full text-center">
-      <h2 className="text-4xl font-bold py-6">AMACASTER</h2>
-
-      <h3 className="text-lg mb-2">archive</h3>
-
-      <div className="flex justify-center w-full gap-8 mb-4 archive-grid">
-        <div className="flex-1 max-w-md archive-section">
-          <h3 className="mb-2 text-center">Hosted by DWR</h3>
-          <ul className="flex flex-col items-center">
-            {hostLinks.map((link) => (
-              <li
-                key={link.url}
-                className="py-1 text-center flex items-center justify-center"
-              >
-                <IconImage
-                  src={`https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/${link.icon}`}
-                  alt={link.name}
-                  className="icon-size mr-1"
-                />
-                <Link href={link.url} className="underline">
-                  {' '}
-                  {link.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="flex-1 max-w-md archive-section">
-          <h3 className="mb-2 text-center">Hosted by Community</h3>
-          <ul className="flex flex-col items-center">
-            {communityLinks.map((link) => (
-              <li
-                key={link.url}
-                className="py-1 text-center flex items-center justify-center"
-              >
-                <IconImage
-                  src={`https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/${link.icon}`}
-                  alt={link.name}
-                  className="icon-size mr-2"
-                />
-                <Link href={link.url} className="underline">
-                  {link.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto my-16 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="mb-3 text-2xl">🎯</div>
-            <h4 className="font-medium mb-2">Crowdsource truth</h4>
-            <p className="text-sm text-gray-600">
-              Match questions with answers from farcaster AMA&apos;s, predict
-              rankings of question usefulness
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="mb-3 text-2xl">⛓️</div>
-            <h4 className="font-medium mb-2">Submit On-chain</h4>
-            <p className="text-sm text-gray-600">
-              Matches, useful questions, predictions & contributions are
-              recorded on OP & the best get POAPs
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="mb-3 text-2xl">🏆</div>
-            <h4 className="font-medium mb-2">Critical Mass</h4>
-            <p className="text-sm text-gray-600">
-              Top 20 most useful q&a pairs can be minted as an NFT with proceeds
-              split amongst POAP holders
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <TestnetInstructions />
-
-      <div>
-        <h3 className="text-lg mb-2">try</h3>
-        <div className="flex flex-row justify-center">
-          <input
-            value={warpcastURL}
-            onChange={(e) => setWarpcastURL(e.target.value)}
-            className="border rounded-md mr-2 px-2 py-2 w-96 focus:outline-none focus:ring-2 focus:ring-purple-500 try-input"
-            placeholder="Insert Warpcast Link..."
-          />
-          <Link
-            href={`/ama/?url=${warpcastURL}`}
-            className="bg-purple-500 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded"
-          >
-            View
-          </Link>
-        </div>
-      </div>
-
-      <ProfilesSection />
-
-      <div className="text-center mt-20">
-        <h3 className="text-lg mb-2">Lore</h3>
-        <p>
-          inverse AMA{' '}
-          <a
-            href="https://warpcast.com/samantha/0xc9010d04"
-            className="underline"
-          >
-            @Samantha
-          </a>
-          <br />
-          wordcloud collection{' '}
-          <a
-            href="https://warpcast.com/ghostlinkz.eth/0x58ce6ae7"
-            className="underline"
-          >
-            @ghostlinkz
-          </a>
-          <br />
-          short story{' '}
-          <a
-            href="https://www.blabla.lol/stories/fc-ama-with-garry-tan"
-            className="underline"
-          >
-            @jackjack.eth
-          </a>
-          <br />
-          challenge set by{' '}
-          <a
-            href="https://warpcast.com/dwr.eth/0xa04f0f2c"
-            className="underline"
-          >
-            @dwr
-          </a>{' '}
-          (
-          <a
-            href="https://warpcast.com/dwr.eth/0x6186cf9b"
-            className="underline"
-          >
-            his ama
-          </a>
-          )
-          <br />
-          forked from{' '}
-          <a
-            href="https://github.com/wojtekwtf/fc-ama-formatter"
-            className="underline"
-          >
-            @woj
-          </a>{' '}
-          and{' '}
-          <a href="https://warpcast.com/alvesjtiago.eth" className="underline">
-            @tiago
-          </a>
-          <br />
-          coding assist{' '}
-          <a href="https://warpcast.com/carter" className="underline">
-            @carter
-          </a>
-          <br />
-          <br />
-          built by @papa
+      <div className="max-w-4xl mx-auto px-4">
+        <h1 className="text-5xl font-bold mb-6">AMACASTER</h1>
+        <p className="text-xl text-gray-600 mb-12">
+          Discover, curate, & learn from Farcaster AMAs
         </p>
-        <div className="flex justify-center gap-4 mt-8">
-          {socialLinks.map((link) => (
-            <a key={link.url} href={link.url}>
-              <IconImage
-                src={`https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/${link.icon}`}
-                alt={link.name}
-                className="icon-size"
-              />
-            </a>
-          ))}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 mb-16">
+          <div className="bg-white/5 rounded-lg p-6 backdrop-blur-sm">
+            <div className="text-3xl mb-4">🎯</div>
+            <h3 className="text-xl font-semibold mb-3">Crowdsource Truth</h3>
+            <p className="text-gray-600">
+              Match questions with answers from Farcaster AMAs and assess the
+              most useful content for the community.
+            </p>
+          </div>
+          <div className="bg-white/5 rounded-lg p-6 backdrop-blur-sm">
+            <div className="text-3xl mb-4">⛓️</div>
+            <h3 className="text-xl font-semibold mb-3">On-chain Recognition</h3>
+            <p className="text-gray-600">
+              Receive POAPs for your contributions in matching and ranking AMA
+              content you find useful.
+            </p>
+          </div>
+          <div className="bg-white/5 rounded-lg p-6 backdrop-blur-sm sm:col-span-2 md:col-span-1">
+            <div className="text-3xl mb-4">🏆</div>
+            <h3 className="text-xl font-semibold mb-3">NFT to ERC-20</h3>
+            <p className="text-gray-600">
+              Top Q&A pairs become mintable NFTs with proceeds shared among
+              active contributors.
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold mb-8">Featured AMAs</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+            <div className="archive-section">
+              <h3 className="text-xl font-semibold mb-4">Industry Leaders</h3>
+              <ul className="space-y-3">
+                {hostLinks.map((link) => (
+                  <li
+                    key={link.url}
+                    className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+                  >
+                    <Link
+                      href={link.url}
+                      className="flex items-center justify-center space-x-3"
+                    >
+                      <IconImage
+                        src={`https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/${link.icon}`}
+                        alt={`${link.name}'s icon`}
+                        className="w-6 h-6"
+                      />
+                      <span className="hover:underline">{link.name}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="archive-section">
+              <h3 className="text-xl font-semibold mb-4">
+                Community Favorites
+              </h3>
+              <ul className="space-y-3">
+                {communityLinks.map((link) => (
+                  <li
+                    key={link.url}
+                    className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+                  >
+                    <Link
+                      href={link.url}
+                      className="flex items-center justify-center space-x-3"
+                    >
+                      <IconImage
+                        src={`https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/${link.icon}`}
+                        alt={`${link.name}'s icon`}
+                        className="w-6 h-6"
+                      />
+                      <span className="hover:underline">{link.name}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-800 pt-12">
+          <h3 className="text-xl font-semibold mb-4">Credits</h3>
+          <div className="space-y-2 text-gray-400">
+            <p>
+              Challenge{' '}
+              <a
+                href="https://warpcast.com/dwr.eth/0xa04f0f2c"
+                className="text-purple-400 hover:underline"
+              >
+                @dwr
+              </a>{' '}
+              ({' '}
+              <a
+                href="https://warpcast.com/dwr.eth/0x6186cf9b"
+                className="text-purple-400 hover:underline"
+              >
+                ama
+              </a>{' '}
+              )
+            </p>
+            <p>
+              Ideas from{' '}
+              <a
+                href="https://github.com/wojtekwtf/fc-ama-formatter"
+                className="text-purple-400 hover:underline"
+              >
+                @woj
+              </a>{' '}
+              and{' '}
+              <a
+                href="https://warpcast.com/alvesjtiago.eth"
+                className="text-purple-400 hover:underline"
+              >
+                @tiago
+              </a>
+            </p>
+            <p>
+              Coding assist{' '}
+              <a
+                href="https://warpcast.com/carter"
+                className="text-purple-400 hover:underline"
+              >
+                @carter
+              </a>
+            </p>
+            <p className="pt-4">
+              Built by{' '}
+              <a
+                href="https://warpcast.com/papa"
+                className="text-purple-400 hover:underline"
+              >
+                @papa
+              </a>
+            </p>
+          </div>
+
+          <div className="flex justify-center gap-6 mt-8">
+            {socialLinks.map((link) => (
+              <a
+                key={link.url}
+                href={link.url}
+                className="hover:opacity-80 transition-opacity"
+                aria-label={`Visit ${link.name}`}
+              >
+                <IconImage
+                  src={`https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/${link.icon}`}
+                  alt={`${link.name} icon`}
+                  className="w-8 h-8"
+                />
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </div>
