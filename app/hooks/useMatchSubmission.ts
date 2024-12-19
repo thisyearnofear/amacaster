@@ -3,6 +3,7 @@ import { useWriteContract, useChainId } from 'wagmi'
 import { CONTRACTS } from '../config/contracts'
 import { AMA_MATCHER_ABI } from '../config/abis'
 import { keccak256, encodePacked } from 'viem'
+import { useUserProfile } from './useUserProfile'
 
 // Helper function to encode matches into a compact format
 function encodeMatches(
@@ -42,6 +43,7 @@ function encodeMatches(
 export function useMatchSubmission() {
   const [error, setError] = useState<Error | null>(null)
   const chainId = useChainId()
+  const { updateUserProfile } = useUserProfile()
   const {
     writeContract,
     isPending,
@@ -66,9 +68,6 @@ export function useMatchSubmission() {
     ) => {
       try {
         console.log('Starting match submission...')
-        console.log('Cast hash:', castHash)
-        console.log('Matches:', matches)
-        console.log('Rankings:', rankings)
 
         if (!CONTRACTS.AMAMatcher.address) {
           throw new Error('Contract address not configured')
@@ -97,29 +96,33 @@ export function useMatchSubmission() {
         const rankingsBigInt = rankings.map(BigInt)
         console.log('Rankings as BigInt:', rankingsBigInt)
 
-        // Submit to contract
-        console.log('Submitting to contract:', {
-          address: CONTRACTS.AMAMatcher.address,
-          functionName: 'submitMatch',
-          args: [amaId, matchHashes, rankingsBigInt],
-        })
-
-        const hash = await writeContract({
+        // Submit to AMAMatcher contract
+        console.log('Submitting to AMAMatcher contract...')
+        const result = await writeContract({
           address: CONTRACTS.AMAMatcher.address,
           abi: AMA_MATCHER_ABI,
           functionName: 'submitMatch',
           args: [amaId, matchHashes, rankingsBigInt],
         })
 
-        console.log('Transaction submitted:', hash)
-        return hash
+        console.log('Transaction hash:', result)
+
+        // Calculate score based on matches and rankings
+        const score = calculateScore(matches, rankings)
+
+        // Update user profile
+        console.log('Updating user profile...')
+        await updateUserProfile(matches.length, score)
+
+        console.log('Transaction and profile update complete')
+        return result
       } catch (error) {
         console.error('Error in submitMatches:', error)
         setError(error instanceof Error ? error : new Error('Unknown error'))
         throw error
       }
     },
-    [isCorrectNetwork, writeContract, resetWrite],
+    [isCorrectNetwork, writeContract, resetWrite, updateUserProfile],
   )
 
   return {
@@ -129,4 +132,22 @@ export function useMatchSubmission() {
     isSuccess,
     error,
   }
+}
+
+// Helper function to calculate score based on matches and rankings
+function calculateScore(
+  matches: { questionHash: string; answerHash: string }[],
+  rankings: number[],
+): number {
+  // Base score for participation
+  let score = 10
+
+  // Points for number of matches
+  score += matches.length * 5
+
+  // Bonus points for matches in top 20
+  const topMatches = matches.filter((_, index) => rankings[index] < 20)
+  score += topMatches.length * 10
+
+  return score
 }

@@ -1,60 +1,72 @@
 import { useEffect, useState } from 'react'
-import type { NeynarUser } from '../types'
+import { type NeynarUser, type NeynarSignInResponse } from '../types/neynar'
 
-export function useNeynarUser() {
+interface UseNeynarUserReturn {
+  neynarUser: NeynarUser | null
+  loading: boolean
+  isLoading: boolean
+  error: string | null
+  updateNeynarUser: (user: NeynarSignInResponse) => void
+  clearNeynarUser: () => void
+  isConnected: boolean
+}
+
+export function useNeynarUser(): UseNeynarUserReturn {
   const [neynarUser, setNeynarUser] = useState<NeynarUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const loadNeynarUser = () => {
+    // Get user data from local storage
+    const storedUser = localStorage.getItem('neynar_user')
+    if (storedUser) {
       try {
-        const signerUUID = localStorage.getItem('neynar_signer_uuid')
-        const userData = localStorage.getItem('neynar_user_data')
-
-        if (signerUUID && userData) {
-          const parsedUserData = JSON.parse(userData)
-          setNeynarUser({
-            signer_uuid: signerUUID,
-            fid: parsedUserData.fid,
-            user: {
-              username: parsedUserData.username,
-              displayName: parsedUserData.display_name,
-              pfp: {
-                url: parsedUserData.pfp_url || parsedUserData.avatar_url || '',
-              },
-            },
-          })
-        } else {
-          setNeynarUser(null)
+        const signInData = JSON.parse(storedUser) as NeynarSignInResponse
+        // Transform SignInResponse to NeynarUser
+        const user: NeynarUser = {
+          fid: signInData.fid,
+          username: signInData.user.username,
+          displayName: signInData.user.displayName,
+          pfp: signInData.user.pfp,
+          followerCount: 0, // These will be updated when fetching from API
+          followingCount: 0,
+          signer_uuid: signInData.signer_uuid,
         }
-      } catch (error) {
-        console.error('Error loading Neynar user:', error)
-        setNeynarUser(null)
-      } finally {
-        setIsLoading(false)
+        setNeynarUser(user)
+      } catch (err) {
+        console.error('Error parsing stored user:', err)
+        localStorage.removeItem('neynar_user')
       }
     }
-
-    // Load initial state
-    loadNeynarUser()
-
-    // Listen for storage changes
-    const handleStorageChange = (event: StorageEvent) => {
-      if (
-        event.key === 'neynar_signer_uuid' ||
-        event.key === 'neynar_user_data'
-      ) {
-        loadNeynarUser()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    setLoading(false)
   }, [])
+
+  const updateNeynarUser = (signInData: NeynarSignInResponse) => {
+    const user: NeynarUser = {
+      fid: signInData.fid,
+      username: signInData.user.username,
+      displayName: signInData.user.displayName,
+      pfp: signInData.user.pfp,
+      followerCount: 0,
+      followingCount: 0,
+      signer_uuid: signInData.signer_uuid,
+    }
+    setNeynarUser(user)
+    localStorage.setItem('neynar_user', JSON.stringify(signInData))
+  }
+
+  const clearNeynarUser = () => {
+    setNeynarUser(null)
+    localStorage.removeItem('neynar_user')
+  }
 
   return {
     neynarUser,
-    isLoading,
+    loading,
+    isLoading: loading,
+    error,
+    updateNeynarUser,
+    clearNeynarUser,
     isConnected: !!neynarUser,
   }
 }

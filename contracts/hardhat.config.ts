@@ -4,7 +4,6 @@ import '@nomicfoundation/hardhat-verify'
 import '@nomicfoundation/hardhat-ethers'
 import '@nomicfoundation/hardhat-chai-matchers'
 import '@nomicfoundation/hardhat-network-helpers'
-import '@nomicfoundation/hardhat-ignition-ethers'
 import '@typechain/hardhat'
 import 'hardhat-gas-reporter'
 import 'solidity-coverage'
@@ -19,7 +18,15 @@ const OP_SEPOLIA_RPC =
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ''
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.24',
+  solidity: {
+    version: '0.8.24',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   networks: {
     hardhat: {},
     'optimism-sepolia': {

@@ -2,44 +2,34 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { type NeynarSignInResponse, type NeynarUser } from '../types/neynar'
 
 interface SignInWithNeynarProps {
-  onSignInSuccess?: (data: {
-    signer_uuid: string
-    fid: number
-    user: any
-  }) => void
-}
-
-interface NeynarUser {
-  signer_uuid: string
-  fid: number
-  user: {
-    username: string
-    displayName: string
-    pfp: {
-      url: string
-    }
-  }
+  onSignInSuccess?: (data: NeynarSignInResponse) => void
 }
 
 declare global {
   interface Window {
-    onSignInSuccess?: (data: any) => void
+    onSignInSuccess?: (data: NeynarSignInResponse) => void
   }
 }
 
 export function SignInWithNeynar({ onSignInSuccess }: SignInWithNeynarProps) {
   const [error, setError] = useState<string | null>(null)
-  const [user, setUser] = useState<NeynarUser | null>(null)
+  const [user, setUser] = useState<NeynarSignInResponse | null>(null)
 
   useEffect(() => {
     // Try to get stored user data
     const storedUser = localStorage.getItem('neynar_user')
     if (storedUser) {
-      const userData = JSON.parse(storedUser)
-      setUser(userData)
-      onSignInSuccess?.(userData)
+      try {
+        const userData = JSON.parse(storedUser) as NeynarSignInResponse
+        setUser(userData)
+        onSignInSuccess?.(userData)
+      } catch (error) {
+        console.error('Error parsing stored user data:', error)
+        localStorage.removeItem('neynar_user')
+      }
     }
 
     const clientId = process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID
@@ -49,14 +39,17 @@ export function SignInWithNeynar({ onSignInSuccess }: SignInWithNeynarProps) {
     }
 
     // Define the callback function
-    window.onSignInSuccess = (data: any) => {
+    window.onSignInSuccess = (data: NeynarSignInResponse) => {
       console.log('Sign-in success with data:', data)
-      if (data.error) {
-        setError(data.error)
+      if ('error' in data) {
+        setError(data.error as string)
         return
       }
+
       // Store user data in localStorage
       localStorage.setItem('neynar_user', JSON.stringify(data))
+      localStorage.setItem('neynar_signer_uuid', data.signer_uuid)
+
       setUser(data)
       onSignInSuccess?.(data)
     }
@@ -82,6 +75,7 @@ export function SignInWithNeynar({ onSignInSuccess }: SignInWithNeynarProps) {
 
   const handleSignOut = () => {
     localStorage.removeItem('neynar_user')
+    localStorage.removeItem('neynar_signer_uuid')
     setUser(null)
   }
 

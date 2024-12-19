@@ -10,6 +10,7 @@ import type { Cast as NeynarCast } from '../../lib/neynarClient'
 import type { AnswerEntry, AnswerStack } from '../components/DraggableQASection'
 import Image from 'next/image'
 import { useNeynarUser } from '../hooks/useNeynarUser'
+import Link from 'next/link'
 
 const DEFAULT_AVATAR = '/default-avatar.png'
 
@@ -231,7 +232,10 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
         <div className="guest-profile">
           <div className="profile-tag">Guest</div>
           <div className="guest-info">
-            <div className="relative w-16 h-16">
+            <Link
+              href={`/profile/${amaUser.fid}`}
+              className="relative w-16 h-16 cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <Image
                 src={amaUser.avatar_url}
                 alt={amaUser.display_name}
@@ -239,16 +243,24 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
                 className="guest-avatar rounded-full object-cover"
                 unoptimized={amaUser.avatar_url.startsWith('data:')}
               />
-            </div>
-            <div className="guest-name">{amaUser.display_name}</div>
-            <div className="guest-username">@{amaUser.username}</div>
+            </Link>
+            <Link
+              href={`/profile/${amaUser.fid}`}
+              className="hover:text-purple-600 transition-colors"
+            >
+              <div className="guest-name">{amaUser.display_name}</div>
+              <div className="guest-username">@{amaUser.username}</div>
+            </Link>
           </div>
         </div>
 
         {/* Initial Cast with Host Info */}
         <div className="initial-cast">
           <div className="cast-header">
-            <div className="relative w-12 h-12">
+            <Link
+              href={`/profile/${mainCast.author.fid}`}
+              className="relative w-12 h-12 cursor-pointer hover:opacity-80 transition-opacity"
+            >
               <Image
                 src={
                   mainCast.author.pfp_url ||
@@ -264,11 +276,18 @@ export default function AMAPage({ searchParams }: AMAPageProps) {
                   ''
                 ).startsWith('data:')}
               />
-            </div>
+            </Link>
             <div>
               <div className="host-tag">Host</div>
-              <div className="font-medium">{mainCast.author.display_name}</div>
-              <div className="text-gray-600">@{mainCast.author.username}</div>
+              <Link
+                href={`/profile/${mainCast.author.fid}`}
+                className="hover:text-purple-600 transition-colors"
+              >
+                <div className="font-medium">
+                  {mainCast.author.display_name}
+                </div>
+                <div className="text-gray-600">@{mainCast.author.username}</div>
+              </Link>
             </div>
           </div>
           <div className="cast-text">{mainCast.text}</div>

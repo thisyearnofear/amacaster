@@ -1,3 +1,7 @@
+// Re-export all Neynar types
+export * from './neynar'
+
+// Local types
 export interface Author {
   fid: number
   username: string
@@ -24,66 +28,21 @@ export interface Cast {
   mentioned_profiles?: Author[]
 }
 
-export interface NeynarCast {
-  hash: string
-  thread_hash: string
-  parent_hash?: string
-  author: {
-    fid: number
-    username: string
-    display_name: string
-    pfp_url?: string
-    pfp?: {
-      url: string
-    }
-    avatar_url?: string
-    fname?: string
-  }
-  text: string
-  timestamp: string
-  reactions: {
-    likes_count: number
-    recasts_count: number
-  }
-  replies: {
-    count: number
-  }
-  mentioned_profiles?: Array<{
-    fid: number
-    username: string
-    display_name: string
-    pfp_url?: string
-    avatar_url?: string
-    fname?: string
-  }>
+export interface AnswerEntry extends Cast {
+  answers?: Cast[]
+}
+
+export interface AnswerStack {
+  id: string
+  answers: Cast[]
 }
 
 export interface DraggableQASectionProps {
   secondTier: Cast[]
   thirdTier: AnswerEntry[]
   isAdmin: boolean
-  neynarUser?: NeynarUser | null
+  neynarUser?: import('./neynar').NeynarUser | null
   onOrderChange: (newSecondTier: Cast[], newThirdTier: AnswerEntry[]) => void
-}
-
-export interface AnswerEntry extends Cast {
-  answers?: Cast[]
-}
-
-export interface AnswerStack {
-  answers: Cast[]
-}
-
-export interface NeynarUser {
-  signer_uuid: string
-  fid: number
-  user: {
-    username: string
-    displayName: string
-    pfp: {
-      url: string
-    }
-  }
 }
 
 export interface QuestionRanking {
@@ -105,4 +64,23 @@ export interface QAItemProps {
   thirdTierResponses?: Cast[]
   amaUser: Author
   userAvatar: string
+}
+
+// Contract types
+export interface OnChainProfile {
+  fid: bigint
+  walletAddress: `0x${string}`
+  matchesSubmitted: bigint
+  totalScore: bigint
+  achievementFlags: bigint
+  lastUpdated: bigint
+}
+
+export interface UserProfile {
+  fid: number
+  walletAddress: `0x${string}`
+  matchesSubmitted: number
+  totalScore: number
+  achievementFlags: number
+  lastUpdated: number
 }

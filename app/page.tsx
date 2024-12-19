@@ -1,48 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useCallback, useEffect } from 'react'
+import { useState } from 'react'
 import IconImage from './components/IconImage'
-import { SignInWithNeynar } from './components/SignInWithNeynar'
 import { TestnetInstructions } from './components/TestnetInstructions'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { ProfilesSection } from './components/ProfilesSection'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-interface NeynarUser {
-  signer_uuid: string
-  fid: number
-  user: {
-    username: string
-    displayName: string
-    pfp: {
-      url: string
-    }
-  }
-}
-
 export default function Home() {
   const [warpcastURL, setWarpcastURL] = useState('')
-  const [neynarUser, setNeynarUser] = useState<NeynarUser | null>(null)
-
-  const handleNeynarSignIn = (data: NeynarUser) => {
-    setNeynarUser(data)
-    localStorage.setItem('neynar_signer_uuid', data.signer_uuid)
-  }
-
-  // Check for existing Neynar session on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem('neynar_user')
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser)
-        setNeynarUser(userData)
-      } catch (error) {
-        console.error('Error parsing stored user data:', error)
-      }
-    }
-  }, [])
 
   const hostLinks = [
     {
@@ -236,84 +204,83 @@ export default function Home() {
             View
           </Link>
         </div>
+      </div>
 
-        <div className="text-center mt-20">
-          <h3 className="text-lg mb-2">Lore</h3>
-          <p>
-            inverse AMA{' '}
-            <a
-              href="https://warpcast.com/samantha/0xc9010d04"
-              className="underline"
-            >
-              @Samantha
+      <ProfilesSection />
+
+      <div className="text-center mt-20">
+        <h3 className="text-lg mb-2">Lore</h3>
+        <p>
+          inverse AMA{' '}
+          <a
+            href="https://warpcast.com/samantha/0xc9010d04"
+            className="underline"
+          >
+            @Samantha
+          </a>
+          <br />
+          wordcloud collection{' '}
+          <a
+            href="https://warpcast.com/ghostlinkz.eth/0x58ce6ae7"
+            className="underline"
+          >
+            @ghostlinkz
+          </a>
+          <br />
+          short story{' '}
+          <a
+            href="https://www.blabla.lol/stories/fc-ama-with-garry-tan"
+            className="underline"
+          >
+            @jackjack.eth
+          </a>
+          <br />
+          challenge set by{' '}
+          <a
+            href="https://warpcast.com/dwr.eth/0xa04f0f2c"
+            className="underline"
+          >
+            @dwr
+          </a>{' '}
+          (
+          <a
+            href="https://warpcast.com/dwr.eth/0x6186cf9b"
+            className="underline"
+          >
+            his ama
+          </a>
+          )
+          <br />
+          forked from{' '}
+          <a
+            href="https://github.com/wojtekwtf/fc-ama-formatter"
+            className="underline"
+          >
+            @woj
+          </a>{' '}
+          and{' '}
+          <a href="https://warpcast.com/alvesjtiago.eth" className="underline">
+            @tiago
+          </a>
+          <br />
+          coding assist{' '}
+          <a href="https://warpcast.com/carter" className="underline">
+            @carter
+          </a>
+          <br />
+          <br />
+          built by @papa
+        </p>
+        <div className="flex justify-center gap-4 mt-8">
+          {socialLinks.map((link) => (
+            <a key={link.url} href={link.url}>
+              <IconImage
+                src={`https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/${link.icon}`}
+                alt={link.name}
+                className="icon-size"
+              />
             </a>
-            <br />
-            wordcloud collection{' '}
-            <a
-              href="https://warpcast.com/ghostlinkz.eth/0x58ce6ae7"
-              className="underline"
-            >
-              @ghostlinkz
-            </a>
-            <br />
-            short story{' '}
-            <a
-              href="https://www.blabla.lol/stories/fc-ama-with-garry-tan"
-              className="underline"
-            >
-              @jackjack.eth
-            </a>
-            <br />
-            challenge set by{' '}
-            <a
-              href="https://warpcast.com/dwr.eth/0xa04f0f2c"
-              className="underline"
-            >
-              @dwr
-            </a>{' '}
-            (
-            <a
-              href="https://warpcast.com/dwr.eth/0x6186cf9b"
-              className="underline"
-            >
-              his ama
-            </a>
-            )
-            <br />
-            forked from{' '}
-            <a
-              href="https://github.com/wojtekwtf/fc-ama-formatter"
-              className="underline"
-            >
-              @woj
-            </a>{' '}
-            and{' '}
-            <a
-              href="https://warpcast.com/alvesjtiago.eth"
-              className="underline"
-            >
-              @tiago
-            </a>
-            <br />
-            coding assist{' '}
-            <a href="https://warpcast.com/carter" className="underline">
-              @carter
-            </a>
-            <br />
-            <br />
-            built by @papa
-          </p>
-          <div className="flex justify-center gap-4 mt-8">
-            {socialLinks.map((link) => (
-              <a key={link.url} href={link.url}>
-                <IconImage
-                  src={`https://res.cloudinary.com/dsneebaw0/image/upload/v1708031540/${link.icon}`}
-                  alt={link.name}
-                  className="icon-size"
-                />
-              </a>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
     </div>
